@@ -16,6 +16,19 @@ interface RomaneioExistente {
   bobinas_count: number;
 }
 
+interface PedidoPendente {
+  id: string;
+  numero_crt: string;
+  numero_oc: string;
+  numero_ov: string;
+  numero_proforma: string;
+  quantidade_bobinas: number;
+  peso_total_kg: number;
+  destinos: string[];
+  bobinas_pendentes: number;
+  created_at: string;
+}
+
 export default function Romaneio() {
   const [crts, setCrts] = useState<string[]>([]);
   const [selectedCrt, setSelectedCrt] = useState<string>('');
@@ -27,6 +40,7 @@ export default function Romaneio() {
   const [totalBobinasOriginal, setTotalBobinasOriginal] = useState<number>(0);
   const [romaneiosExistentes, setRomaneiosExistentes] = useState<RomaneioExistente[]>([]);
   const [selectedBobinas, setSelectedBobinas] = useState<Set<string>>(new Set());
+  const [pedidosPendentes, setPedidosPendentes] = useState<PedidoPendente[]>([]);
   const [loading, setLoading] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -40,6 +54,7 @@ export default function Romaneio() {
 
   useEffect(() => {
     loadCrts();
+    loadPedidosPendentes();
   }, []);
 
   const loadCrts = async () => {
@@ -64,6 +79,46 @@ export default function Romaneio() {
         const uniqueCrts = [...new Set(bobinasData.map(b => b.numero_crt).filter(Boolean))] as string[];
         setCrts(uniqueCrts);
       }
+    }
+  };
+
+  const loadPedidosPendentes = async () => {
+    try {
+      const { data: pedidos, error } = await supabase
+        .from('pedidos')
+        .select('id, numero_crt, numero_oc, numero_ov, numero_proforma, quantidade_bobinas, peso_total_kg, created_at')
+        .eq('cancelado', false)
+        .not('destino', 'is', null)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      const pedidosComDetalhes = await Promise.all(
+        (pedidos || []).map(async (pedido) => {
+          const { data: destinosData } = await supabase
+            .from('pedidos_destinos')
+            .select('destino')
+            .eq('pedido_id', pedido.id)
+            .order('ordem', { ascending: true });
+
+          const { count: bobinasPendentes } = await supabase
+            .from('bobinas')
+            .select('*', { count: 'exact', head: true })
+            .eq('numero_crt', pedido.numero_crt)
+            .eq('status', 'em_estoque');
+
+          return {
+            ...pedido,
+            destinos: destinosData?.map(d => d.destino) || [],
+            bobinas_pendentes: bobinasPendentes || 0
+          };
+        })
+      );
+
+      const pedidosFiltrados = pedidosComDetalhes.filter(p => p.bobinas_pendentes > 0);
+      setPedidosPendentes(pedidosFiltrados);
+    } catch (error) {
+      console.error('Erro ao carregar pedidos pendentes:', error);
     }
   };
 
@@ -281,6 +336,7 @@ export default function Romaneio() {
         setTotalBobinasOriginal(0);
         setRomaneiosExistentes([]);
         loadCrts();
+        loadPedidosPendentes();
       } else {
         setFormData(prev => ({
           data_carregamento: '',
@@ -293,6 +349,7 @@ export default function Romaneio() {
         setSelectedBobinas(new Set());
         setSelectedDestino('');
         loadCrtDestinos(crtDoRomaneio);
+        loadPedidosPendentes();
       }
     } catch (error: any) {
       console.error('Erro ao gerar romaneio:', error);
@@ -788,6 +845,78 @@ export default function Romaneio() {
           </button>
         </div>
       </div>
+
+      {pedidosPendentes.length > 0 && (
+        <div className="bg-white rounded-lg shadow">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h2 className="text-lg font-semibold text-gray-900">Pedidos Pendentes de Romaneio</h2>
+            <p className="text-sm text-gray-500 mt-1">Pedidos com bobinas aguardando carregamento</p>
+          </div>
+
+          <div className="p-6">
+            <div className="space-y-4">
+              {pedidosPendentes.map((pedido) => (
+                <div
+                  key={pedido.id}
+                  className="border border-orange-300 bg-orange-50 hover:border-orange-400 rounded-lg p-4 transition-all"
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-orange-100">
+                          <Truck className="w-5 h-5 text-orange-600" />
+                        </div>
+                        <div>
+                          <p className="font-semibold text-gray-900 text-lg">CRT: {pedido.numero_crt}</p>
+                          <div className="mt-1 space-y-0.5">
+                            <p className="text-sm text-gray-600">
+                              OV: {pedido.numero_ov || 'N/A'} • OC: {pedido.numero_oc || 'N/A'}
+                            </p>
+                            <p className="text-sm text-gray-600">
+                              Proforma: {pedido.numero_proforma || 'N/A'}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-3 gap-4 mt-4 p-4 bg-white rounded-lg border border-gray-200">
+                        <div>
+                          <p className="text-xs text-gray-500 uppercase font-medium mb-1">Total Bobinas</p>
+                          <p className="text-xl font-bold text-gray-900">{pedido.quantidade_bobinas}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500 uppercase font-medium mb-1">Pendentes</p>
+                          <p className="text-xl font-bold text-orange-600">{pedido.bobinas_pendentes}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500 uppercase font-medium mb-1">Peso Total</p>
+                          <p className="text-xl font-bold text-gray-900">{pedido.peso_total_kg.toFixed(2)} kg</p>
+                        </div>
+                      </div>
+
+                      {pedido.destinos && pedido.destinos.length > 0 && (
+                        <div className="mt-4 p-3 bg-white rounded-lg border border-gray-200">
+                          <p className="text-xs text-gray-500 uppercase font-medium mb-2">Destinos</p>
+                          <div className="flex flex-wrap gap-2">
+                            {pedido.destinos.map((destino, idx) => (
+                              <span
+                                key={idx}
+                                className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800"
+                              >
+                                {destino}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
