@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Package, FileText, Truck, BarChart3, MapPin, CheckSquare, LogOut } from 'lucide-react';
+import { Package, FileText, Truck, BarChart3, MapPin, CheckSquare, LogOut, ClipboardList } from 'lucide-react';
 import Entrada from './components/Entrada';
 import Saida from './components/Saida';
 import Pedidos from './components/Pedidos';
@@ -7,8 +7,9 @@ import AcompanhamentoPedidos from './components/AcompanhamentoPedidos';
 import ControleDips from './components/ControleDips';
 import Romaneio from './components/Romaneio';
 import Relatorios from './components/Relatorios';
+import PreCadastro from './components/PreCadastro';
 
-type Tab = 'entrada' | 'saida' | 'pedidos' | 'acompanhamento' | 'controle-dips' | 'romaneio' | 'relatorios';
+type Tab = 'entrada' | 'saida' | 'pedidos' | 'acompanhamento' | 'controle-dips' | 'romaneio' | 'relatorios' | 'pre-cadastro';
 
 function App() {
   const [activeTab, setActiveTab] = useState<Tab>('entrada');
@@ -32,6 +33,17 @@ function App() {
           >
             <Package className="w-5 h-5" />
             <span>Entrada</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('pre-cadastro')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
+              activeTab === 'pre-cadastro'
+                ? 'bg-white bg-opacity-10 text-white border border-white border-opacity-20'
+                : 'text-gray-300 hover:bg-white hover:bg-opacity-5 border border-transparent'
+            }`}
+          >
+            <ClipboardList className="w-5 h-5" />
+            <span>Pré Cadastro</span>
           </button>
           <button
             onClick={() => setActiveTab('saida')}
@@ -107,6 +119,7 @@ function App() {
           <div className="px-8 py-4">
             <h2 className="text-xl font-semibold text-gray-900">
               {activeTab === 'entrada' && 'Entrada de Bobinas'}
+              {activeTab === 'pre-cadastro' && 'Pré Cadastro de CRT'}
               {activeTab === 'saida' && 'Registro de Saída'}
               {activeTab === 'pedidos' && 'Gerenciar Pedidos'}
               {activeTab === 'acompanhamento' && 'Status dos Pedidos'}
@@ -119,6 +132,7 @@ function App() {
 
         <main className="flex-1 px-8 py-8 overflow-auto">
           {activeTab === 'entrada' && <Entrada />}
+          {activeTab === 'pre-cadastro' && <PreCadastro />}
           {activeTab === 'saida' && <Saida />}
           {activeTab === 'pedidos' && <Pedidos />}
           {activeTab === 'acompanhamento' && <AcompanhamentoPedidos />}
