@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Save, Edit2, Plus, Trash2, FileText } from 'lucide-react';
+import { Save, Edit2, Plus, Trash2, FileText, Search } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 interface PreCadastroData {
@@ -20,6 +20,8 @@ export default function PreCadastro() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [filtroCrt, setFiltroCrt] = useState('');
+  const [filtroOv, setFiltroOv] = useState('');
   const [formData, setFormData] = useState<PreCadastroData>({
     numero_crt: '',
     ov: '',
@@ -145,6 +147,12 @@ export default function PreCadastro() {
     setEditingId(null);
     setShowForm(false);
   };
+
+  const registrosFiltrados = registros.filter((registro) => {
+    const matchCrt = filtroCrt === '' || registro.numero_crt.toLowerCase().includes(filtroCrt.toLowerCase());
+    const matchOv = filtroOv === '' || registro.ov.toLowerCase().includes(filtroOv.toLowerCase());
+    return matchCrt && matchOv;
+  });
 
   return (
     <div className="space-y-6">
@@ -315,6 +323,46 @@ export default function PreCadastro() {
         </div>
       )}
 
+      <div className="bg-white rounded-lg shadow-md p-4 border border-gray-200">
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 text-gray-700">
+            <Search className="w-5 h-5" />
+            <span className="font-medium">Filtros:</span>
+          </div>
+          <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <input
+                type="text"
+                placeholder="Buscar por Número do CRT..."
+                value={filtroCrt}
+                onChange={(e) => setFiltroCrt(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1A2441] focus:border-transparent"
+              />
+            </div>
+            <div>
+              <input
+                type="text"
+                placeholder="Buscar por OV..."
+                value={filtroOv}
+                onChange={(e) => setFiltroOv(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1A2441] focus:border-transparent"
+              />
+            </div>
+          </div>
+          {(filtroCrt || filtroOv) && (
+            <button
+              onClick={() => {
+                setFiltroCrt('');
+                setFiltroOv('');
+              }}
+              className="px-4 py-2 text-sm bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+            >
+              Limpar
+            </button>
+          )}
+        </div>
+      </div>
+
       <div className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
@@ -353,14 +401,16 @@ export default function PreCadastro() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {registros.length === 0 ? (
+              {registrosFiltrados.length === 0 ? (
                 <tr>
                   <td colSpan={10} className="px-6 py-8 text-center text-gray-500">
-                    Nenhum registro encontrado. Clique em "Novo Registro" para adicionar.
+                    {registros.length === 0
+                      ? 'Nenhum registro encontrado. Clique em "Novo Registro" para adicionar.'
+                      : 'Nenhum registro corresponde aos filtros aplicados.'}
                   </td>
                 </tr>
               ) : (
-                registros.map((registro) => (
+                registrosFiltrados.map((registro) => (
                   <tr key={registro.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                       {registro.numero_crt}
