@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase';
 interface PedidoTimeline {
   id: string;
   numero_crt: string;
+  numero_ov: string;
   numero_fatura: string;
   dip_processado: boolean;
   status_atual: 'recebido' | 'aguardando_dip' | 'separacao' | 'carregamento' | 'aduana_br' | 'aduana_ar' | 'rota' | 'entregue';
@@ -110,7 +111,7 @@ export default function AcompanhamentoPedidos() {
     try {
       const { data, error } = await supabase
         .from('pedidos')
-        .select('id, numero_crt, numero_fatura, dip_processado, status_pedido, destino, cancelado')
+        .select('id, numero_crt, numero_ov, numero_fatura, dip_processado, status_pedido, destino, cancelado')
         .not('destino', 'is', null)
         .eq('cancelado', false)
         .order('created_at', { ascending: false });
@@ -213,6 +214,9 @@ export default function AcompanhamentoPedidos() {
               <div key={pedido.id} className="bg-white rounded-lg shadow p-6">
                 <div className="mb-6">
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">{pedido.numero_crt}</h3>
+                  <p className="text-sm text-gray-600">
+                    OV: {pedido.numero_ov || 'N/A'} • Fatura: {pedido.numero_fatura || 'N/A'}
+                  </p>
                   {pedido.destinos && pedido.destinos.length > 0 && (
                     <div className="flex items-start gap-2 mt-2">
                       <MapPin className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />

@@ -9,6 +9,7 @@ interface Romaneio {
   placa_carreta: string;
   numero_crt: string | null;
   numero_fatura: string | null;
+  numero_ov: string | null;
   destino: string;
   data_hora_saida: string | null;
 }
@@ -36,7 +37,25 @@ export default function Saida() {
     }
 
     if (data) {
-      setRomaneios(data);
+      const romaneirosComOV = await Promise.all(
+        data.map(async (romaneio) => {
+          if (romaneio.numero_crt) {
+            const { data: pedidoData } = await supabase
+              .from('pedidos')
+              .select('numero_ov')
+              .eq('numero_crt', romaneio.numero_crt)
+              .eq('cancelado', false)
+              .maybeSingle();
+
+            return {
+              ...romaneio,
+              numero_ov: pedidoData?.numero_ov || null,
+            };
+          }
+          return { ...romaneio, numero_ov: null };
+        })
+      );
+      setRomaneios(romaneirosComOV);
     }
   };
 
@@ -181,7 +200,7 @@ export default function Saida() {
                           {romaneio.numero_crt || '-'}
                         </div>
                         <div className="text-gray-500 text-xs">
-                          {romaneio.numero_fatura || '-'}
+                          OV: {romaneio.numero_ov || '-'} • Fatura: {romaneio.numero_fatura || '-'}
                         </div>
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-900">
@@ -223,7 +242,7 @@ export default function Saida() {
               Detalhes do Romaneio Selecionado
             </h3>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {selectedRomaneio.numero_crt && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -232,6 +251,20 @@ export default function Saida() {
                   <input
                     type="text"
                     value={selectedRomaneio.numero_crt}
+                    readOnly
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-700 cursor-not-allowed"
+                  />
+                </div>
+              )}
+
+              {selectedRomaneio.numero_ov && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    OV (Ordem de Venda)
+                  </label>
+                  <input
+                    type="text"
+                    value={selectedRomaneio.numero_ov}
                     readOnly
                     className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-700 cursor-not-allowed"
                   />

@@ -5,6 +5,7 @@ import { Globe, CheckCircle, Truck, Home, Shield } from 'lucide-react';
 interface Pedido {
   id: string;
   numero_crt: string;
+  numero_ov: string;
   numero_fatura: string;
   status_pedido: string;
   destino: string;
@@ -23,7 +24,7 @@ export default function CrossBorder() {
   const loadPedidos = async () => {
     const { data, error } = await supabase
       .from('pedidos')
-      .select('id, numero_crt, numero_fatura, status_pedido, destino')
+      .select('id, numero_crt, numero_ov, numero_fatura, status_pedido, destino')
       .in('status_pedido', ['aduana_br', 'aduana_ar', 'rota'])
       .eq('cancelado', false)
       .order('created_at', { ascending: false });
@@ -146,6 +147,9 @@ export default function CrossBorder() {
                       CRT
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      OV
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Fatura
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -166,6 +170,9 @@ export default function CrossBorder() {
                     >
                       <td className="px-4 py-3 text-sm font-medium text-gray-900">
                         {pedido.numero_crt}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-600">
+                        {pedido.numero_ov || '-'}
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-600">
                         {pedido.numero_fatura || '-'}
@@ -193,7 +200,7 @@ export default function CrossBorder() {
               Atualizar Status do CRT
             </h3>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Número CRT
@@ -201,6 +208,18 @@ export default function CrossBorder() {
                 <input
                   type="text"
                   value={selectedPedido.numero_crt}
+                  readOnly
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-700 cursor-not-allowed"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  OV (Ordem de Venda)
+                </label>
+                <input
+                  type="text"
+                  value={selectedPedido.numero_ov || '-'}
                   readOnly
                   className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-700 cursor-not-allowed"
                 />
