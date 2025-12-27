@@ -15,6 +15,13 @@ interface PreCadastroData {
   volumes_programados_kg: number;
 }
 
+interface DeleteModalData {
+  id: string;
+  numero_crt: string;
+  bobinasCount: number;
+  notasFiscaisCount: number;
+}
+
 export default function PreCadastro() {
   const [registros, setRegistros] = useState<PreCadastroData[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -22,6 +29,10 @@ export default function PreCadastro() {
   const [loading, setLoading] = useState(false);
   const [filtroCrt, setFiltroCrt] = useState('');
   const [filtroOv, setFiltroOv] = useState('');
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteModalData, setDeleteModalData] = useState<DeleteModalData | null>(null);
+  const [justificativa, setJustificativa] = useState('');
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const [formData, setFormData] = useState<PreCadastroData>({
     numero_crt: '',
     ov: '',
@@ -113,23 +124,100 @@ export default function PreCadastro() {
     setShowForm(true);
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Tem certeza que deseja excluir este registro?')) {
+  const handleDelete = async (id: string, numero_crt: string) => {
+    setDeleteLoading(true);
+
+    try {
+      const { count: bobinasCount } = await supabase
+        .from('bobinas')
+        .select('*', { count: 'exact', head: true })
+        .eq('numero_crt', numero_crt);
+
+      const { count: notasFiscaisCount } = await supabase
+        .from('notas_fiscais')
+        .select('*', { count: 'exact', head: true })
+        .eq('numero_crt', numero_crt);
+
+      setDeleteModalData({
+        id,
+        numero_crt,
+        bobinasCount: bobinasCount || 0,
+        notasFiscaisCount: notasFiscaisCount || 0,
+      });
+      setShowDeleteModal(true);
+    } catch (error) {
+      console.error('Erro ao buscar dados:', error);
+      alert('Erro ao carregar informações para exclusão');
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
+  const confirmDelete = async () => {
+    if (!justificativa.trim()) {
+      alert('Por favor, insira uma justificativa para a exclusão');
       return;
     }
 
-    const { error } = await supabase
-      .from('pre_cadastro')
-      .delete()
-      .eq('id', id);
+    if (!deleteModalData) return;
 
-    if (error) {
-      console.error('Erro ao excluir:', error);
-      alert('Erro ao excluir registro');
-    } else {
-      alert('Registro excluído com sucesso!');
+    setDeleteLoading(true);
+
+    try {
+      const totalRegistros = 1 + deleteModalData.bobinasCount + deleteModalData.notasFiscaisCount;
+
+      const { error: bobinasError } = await supabase
+        .from('bobinas')
+        .delete()
+        .eq('numero_crt', deleteModalData.numero_crt);
+
+      if (bobinasError) throw bobinasError;
+
+      const { error: notasError } = await supabase
+        .from('notas_fiscais')
+        .delete()
+        .eq('numero_crt', deleteModalData.numero_crt);
+
+      if (notasError) throw notasError;
+
+      const { error: preError } = await supabase
+        .from('pre_cadastro')
+        .delete()
+        .eq('id', deleteModalData.id);
+
+      if (preError) throw preError;
+
+      const { error: logError } = await supabase
+        .from('exclusao_log')
+        .insert({
+          numero_crt: deleteModalData.numero_crt,
+          justificativa: justificativa.trim(),
+          bobinas_excluidas: deleteModalData.bobinasCount,
+          notas_fiscais_excluidas: deleteModalData.notasFiscaisCount,
+          total_registros_excluidos: totalRegistros,
+        });
+
+      if (logError) {
+        console.error('Erro ao registrar log:', logError);
+      }
+
+      alert('Todos os registros do CRT foram excluídos com sucesso!');
+      setShowDeleteModal(false);
+      setDeleteModalData(null);
+      setJustificativa('');
       loadRegistros();
+    } catch (error: any) {
+      console.error('Erro ao excluir:', error);
+      alert('Erro ao excluir registros: ' + error.message);
+    } finally {
+      setDeleteLoading(false);
     }
+  };
+
+  const cancelDelete = () => {
+    setShowDeleteModal(false);
+    setDeleteModalData(null);
+    setJustificativa('');
   };
 
   const resetForm = () => {
@@ -450,8 +538,9 @@ export default function PreCadastro() {
                           Editar
                         </button>
                         <button
-                          onClick={() => handleDelete(registro.id!)}
-                          className="flex items-center gap-1 px-3 py-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-xs font-medium"
+                          onClick={() => handleDelete(registro.id!, registro.numero_crt)}
+                          disabled={deleteLoading}
+                          className="flex items-center gap-1 px-3 py-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-xs font-medium disabled:bg-gray-400 disabled:cursor-not-allowed"
                           title="Excluir"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -466,6 +555,83 @@ export default function PreCadastro() {
           </table>
         </div>
       </div>
+
+      {showDeleteModal && deleteModalData && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-3 bg-red-100 rounded-full">
+                <Trash2 className="w-6 h-6 text-red-600" />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-gray-900">Excluir CRT Completo</h3>
+                <p className="text-sm text-gray-600">Esta ação não pode ser desfeita</p>
+              </div>
+            </div>
+
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+              <p className="text-sm font-semibold text-red-800 mb-2">
+                Você está prestes a excluir TODOS os registros relacionados ao CRT:
+              </p>
+              <p className="text-lg font-bold text-red-900 mb-3">{deleteModalData.numero_crt}</p>
+
+              <div className="space-y-2 text-sm text-gray-700">
+                <div className="flex justify-between items-center py-2 border-b border-red-200">
+                  <span className="font-medium">Pré-cadastro:</span>
+                  <span className="font-bold text-red-700">1 registro</span>
+                </div>
+                <div className="flex justify-between items-center py-2 border-b border-red-200">
+                  <span className="font-medium">Bobinas:</span>
+                  <span className="font-bold text-red-700">{deleteModalData.bobinasCount} registro(s)</span>
+                </div>
+                <div className="flex justify-between items-center py-2">
+                  <span className="font-medium">Notas Fiscais:</span>
+                  <span className="font-bold text-red-700">{deleteModalData.notasFiscaisCount} registro(s)</span>
+                </div>
+              </div>
+
+              <p className="text-sm font-semibold text-red-800 mt-3">
+                Total: {1 + deleteModalData.bobinasCount + deleteModalData.notasFiscaisCount} registro(s) serão excluídos permanentemente
+              </p>
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Justificativa para Exclusão *
+              </label>
+              <textarea
+                value={justificativa}
+                onChange={(e) => setJustificativa(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                rows={4}
+                placeholder="Digite a justificativa para esta exclusão..."
+                disabled={deleteLoading}
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                A justificativa é obrigatória e ficará registrada no sistema
+              </p>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={confirmDelete}
+                disabled={deleteLoading || !justificativa.trim()}
+                className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-semibold disabled:bg-gray-400 disabled:cursor-not-allowed"
+              >
+                <Trash2 className="w-5 h-5" />
+                {deleteLoading ? 'Excluindo...' : 'Confirmar Exclusão'}
+              </button>
+              <button
+                onClick={cancelDelete}
+                disabled={deleteLoading}
+                className="flex-1 px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-semibold disabled:bg-gray-100 disabled:cursor-not-allowed"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
