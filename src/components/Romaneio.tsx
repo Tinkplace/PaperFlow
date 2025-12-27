@@ -303,7 +303,7 @@ export default function Romaneio() {
           if (pedidoData) {
             await supabase
               .from('pedidos')
-              .update({ status_atual: 'carregamento' })
+              .update({ status_pedido: 'carregamento' })
               .eq('id', pedidoData.id);
           }
         }
