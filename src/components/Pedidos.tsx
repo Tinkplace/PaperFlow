@@ -105,14 +105,20 @@ export default function Pedidos() {
     }
   };
 
-  const openPedidoModal = (crt: CrtCargaCompleta) => {
+  const openPedidoModal = async (crt: CrtCargaCompleta) => {
     const firstBobina = crt.bobinas[0];
+
+    const { data: preCadastro } = await supabase
+      .from('pre_cadastro')
+      .select('ov, oc')
+      .eq('numero_crt', crt.numero_crt)
+      .maybeSingle();
 
     setPedidoForm({
       numero_crt: crt.numero_crt,
-      numero_oc: firstBobina.numero_oc || '',
+      numero_oc: preCadastro?.oc || firstBobina.numero_oc || '',
       numero_proforma: firstBobina.numero_proforma || '',
-      numero_ov: firstBobina.numero_ov || '',
+      numero_ov: preCadastro?.ov || firstBobina.numero_ov || '',
       tipo_papel: firstBobina.tipo_papel || '',
       gramatura: firstBobina.gramatura || 0,
       formato_mm: firstBobina.formato_mm || 0,
