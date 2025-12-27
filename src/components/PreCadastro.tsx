@@ -393,17 +393,19 @@ export default function PreCadastro() {
                       <div className="flex gap-2">
                         <button
                           onClick={() => handleEdit(registro)}
-                          className="text-blue-600 hover:text-blue-800"
+                          className="flex items-center gap-1 px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs font-medium"
                           title="Editar"
                         >
-                          <Edit2 className="w-4 h-4" />
+                          <Edit2 className="w-3.5 h-3.5" />
+                          Editar
                         </button>
                         <button
                           onClick={() => handleDelete(registro.id!)}
-                          className="text-red-600 hover:text-red-800"
+                          className="flex items-center gap-1 px-3 py-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-xs font-medium"
                           title="Excluir"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Trash2 className="w-3.5 h-3.5" />
+                          Excluir
                         </button>
                       </div>
                     </td>
