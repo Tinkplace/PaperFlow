@@ -115,11 +115,90 @@ export default function Saida() {
           </select>
         </div>
 
+        {romaneios.length > 0 && (
+          <div className="bg-gray-50 p-4 rounded-lg">
+            <h3 className="text-md font-semibold text-gray-800 flex items-center gap-2 mb-4">
+              <Clock className="w-5 h-5 text-yellow-600" />
+              Romaneios Pendentes de Saída ({romaneios.length})
+            </h3>
+
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-white">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      CRT / Fatura
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Destino
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Motorista
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Placa
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Data Carregamento
+                    </th>
+                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Status
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {romaneios.map((romaneio) => (
+                    <tr
+                      key={romaneio.id}
+                      className={`hover:bg-blue-50 transition-colors ${
+                        selectedRomaneioId === romaneio.id ? 'bg-blue-100' : ''
+                      }`}
+                    >
+                      <td className="px-4 py-3 text-sm text-gray-900">
+                        <div className="font-medium">
+                          {romaneio.numero_crt || '-'}
+                        </div>
+                        <div className="text-gray-500 text-xs">
+                          {romaneio.numero_fatura || '-'}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-900">
+                        {romaneio.destino}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-600">
+                        {romaneio.nome_motorista}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-600 font-mono">
+                        {romaneio.placa_carreta}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-600">
+                        {new Date(romaneio.data_carregamento).toLocaleString('pt-BR', {
+                          day: '2-digit',
+                          month: '2-digit',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                          <Clock className="w-3 h-3 mr-1" />
+                          Aguardando Saída
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
         {selectedRomaneio && (
           <div className="bg-gray-50 p-4 rounded-lg space-y-4">
             <h3 className="text-md font-semibold text-gray-800 flex items-center gap-2">
               <Truck className="w-5 h-5" />
-              Detalhes do Romaneio
+              Detalhes do Romaneio Selecionado
             </h3>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
