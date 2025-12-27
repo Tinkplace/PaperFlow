@@ -5,7 +5,7 @@ import { supabase } from '../lib/supabase';
 interface Pedido {
   id: string;
   numero_crt: string;
-  numero_proforma: string;
+  numero_fatura: string;
   dip_processado: boolean;
 }
 
@@ -32,7 +32,7 @@ export default function ControleDips() {
     try {
       const { data, error } = await supabase
         .from('pedidos')
-        .select('id, numero_crt, numero_proforma, dip_processado')
+        .select('id, numero_crt, numero_fatura, dip_processado')
         .not('numero_crt', 'is', null)
         .not('destino', 'is', null)
         .eq('cancelado', false)
@@ -96,7 +96,7 @@ export default function ControleDips() {
                   CRT: <span className="font-semibold text-blue-600">{pedido.numero_crt}</span>
                 </p>
                 <p className="text-sm text-gray-600">
-                  Proforma: <span className="font-medium">{pedido.numero_proforma || 'N/A'}</span>
+                  Fatura: <span className="font-medium">{pedido.numero_fatura || 'N/A'}</span>
                 </p>
                 <p className="text-xs mt-1">
                   <span className={`inline-flex items-center px-2 py-1 rounded-full font-medium ${

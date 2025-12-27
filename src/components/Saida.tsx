@@ -8,7 +8,7 @@ interface Romaneio {
   nome_motorista: string;
   placa_carreta: string;
   numero_crt: string | null;
-  numero_proforma: string | null;
+  numero_fatura: string | null;
   destino: string;
   data_hora_saida: string | null;
 }
@@ -137,14 +137,14 @@ export default function Saida() {
                 </div>
               )}
 
-              {selectedRomaneio.numero_proforma && (
+              {selectedRomaneio.numero_fatura && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Número Proforma
+                    Número Fatura
                   </label>
                   <input
                     type="text"
-                    value={selectedRomaneio.numero_proforma}
+                    value={selectedRomaneio.numero_fatura}
                     readOnly
                     className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-700 cursor-not-allowed"
                   />

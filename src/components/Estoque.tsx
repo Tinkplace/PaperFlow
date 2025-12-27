@@ -7,7 +7,7 @@ interface BobinaEstoque {
   numero_bobina: string;
   numero_crt: string;
   numero_oc: string;
-  numero_proforma: string;
+  numero_fatura: string;
   numero_ov: string;
   tipo_papel: string;
   gramatura: number;
@@ -27,7 +27,6 @@ interface BobinaEstoque {
   quadra: string;
   linha: string;
   nota_fiscal_id: string;
-  numero_fatura: string;
   carga_completa: boolean;
   created_at: string;
 }
@@ -152,7 +151,7 @@ export default function Estoque() {
       'CRT',
       'OV',
       'OC',
-      'Proforma',
+      'Fatura',
       'Tipo Papel',
       'Gramatura',
       'Formato (mm)',
@@ -161,7 +160,6 @@ export default function Estoque() {
       'Importador',
       'Origem',
       'Nota Fiscal',
-      'Fatura',
       'Carga Completa',
       'Rua',
       'Quadra',
@@ -174,7 +172,7 @@ export default function Estoque() {
       b.numero_crt,
       b.numero_ov,
       b.numero_oc,
-      b.numero_proforma,
+      b.numero_fatura,
       b.tipo_papel,
       b.gramatura,
       b.formato_mm,
@@ -183,7 +181,6 @@ export default function Estoque() {
       b.importador,
       b.origem,
       notasFiscais.get(b.nota_fiscal_id)?.numero_nota_fiscal || '',
-      b.numero_fatura || '',
       b.carga_completa ? 'Sim' : 'Não',
       b.rua,
       b.quadra,

@@ -13,7 +13,7 @@ interface CrtCargaCompleta {
 interface PedidoForm {
   numero_crt: string;
   numero_oc: string;
-  numero_proforma: string;
+  numero_fatura: string;
   numero_ov: string;
   tipo_papel: string;
   gramatura: number;
@@ -29,7 +29,7 @@ interface PedidoAtivo {
   numero_crt: string;
   numero_oc: string;
   numero_ov: string;
-  numero_proforma: string;
+  numero_fatura: string;
   quantidade_bobinas: number;
   peso_total_kg: number;
   destinos: string[];
@@ -122,7 +122,7 @@ export default function Pedidos() {
   const [pedidoForm, setPedidoForm] = useState<PedidoForm>({
     numero_crt: '',
     numero_oc: '',
-    numero_proforma: '',
+    numero_fatura: '',
     numero_ov: '',
     tipo_papel: '',
     gramatura: 0,
@@ -194,7 +194,7 @@ export default function Pedidos() {
     try {
       const { data: pedidos, error } = await supabase
         .from('pedidos')
-        .select('id, numero_crt, numero_oc, numero_ov, numero_proforma, quantidade_bobinas, peso_total_kg, status_pedido, created_at')
+        .select('id, numero_crt, numero_oc, numero_ov, numero_fatura, quantidade_bobinas, peso_total_kg, status_pedido, created_at')
         .eq('cancelado', false)
         .not('destino', 'is', null)
         .order('created_at', { ascending: false });
@@ -295,7 +295,7 @@ export default function Pedidos() {
     setPedidoForm({
       numero_crt: crt.numero_crt,
       numero_oc: preCadastro?.oc || firstBobina.numero_oc || '',
-      numero_proforma: firstBobina.numero_proforma || '',
+      numero_fatura: firstBobina.numero_fatura || '',
       numero_ov: preCadastro?.ov || firstBobina.numero_ov || '',
       tipo_papel: firstBobina.tipo_papel || '',
       gramatura: firstBobina.gramatura || 0,
@@ -323,7 +323,7 @@ export default function Pedidos() {
         .insert([{
           numero_crt: pedidoForm.numero_crt,
           numero_oc: pedidoForm.numero_oc,
-          numero_proforma: pedidoForm.numero_proforma,
+          numero_fatura: pedidoForm.numero_fatura,
           numero_ov: pedidoForm.numero_ov,
           tipo_papel: pedidoForm.tipo_papel,
           gramatura: pedidoForm.gramatura,
@@ -390,7 +390,7 @@ PEDIDO DE CARREGAMENTO
 
 NÚMERO DO CRT: ${pedidoForm.numero_crt}
 OC: ${pedidoForm.numero_oc}
-Proforma: ${pedidoForm.numero_proforma}
+Fatura: ${pedidoForm.numero_fatura}
 OV: ${pedidoForm.numero_ov}
 
 ESPECIFICAÇÕES DO PRODUTO:
@@ -447,7 +447,7 @@ Data de Emissão: ${new Date().toLocaleDateString('pt-BR')} ${new Date().toLocal
                               OV: {pedido.numero_ov || 'N/A'} • OC: {pedido.numero_oc || 'N/A'}
                             </p>
                             <p className="text-sm text-gray-600">
-                              Proforma: {pedido.numero_proforma || 'N/A'}
+                              Fatura: {pedido.numero_fatura || 'N/A'}
                             </p>
                           </div>
                         </div>
@@ -538,7 +538,7 @@ Data de Emissão: ${new Date().toLocaleDateString('pt-BR')} ${new Date().toLocal
                                 OV: {crt.bobinas[0].numero_ov || 'N/A'} • OC: {crt.bobinas[0].numero_oc || 'N/A'}
                               </p>
                               <p className="text-sm text-gray-600">
-                                Proforma: {crt.bobinas[0].numero_proforma || 'N/A'}
+                                Fatura: {crt.bobinas[0].numero_fatura || 'N/A'}
                               </p>
                               {crt.numero_fatura && (
                                 <p className="text-sm text-gray-600">
@@ -631,11 +631,11 @@ Data de Emissão: ${new Date().toLocaleDateString('pt-BR')} ${new Date().toLocal
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Proforma
+                    Fatura
                   </label>
                   <input
                     type="text"
-                    value={pedidoForm.numero_proforma}
+                    value={pedidoForm.numero_fatura}
                     disabled
                     className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-700"
                   />

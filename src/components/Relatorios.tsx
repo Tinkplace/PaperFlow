@@ -4,7 +4,7 @@ import { Package, Truck, Clock, TrendingUp, X } from 'lucide-react';
 
 interface CrtData {
   numero_crt: string;
-  numero_proforma: string;
+  numero_fatura: string;
   status: string;
   bobinas_count: number;
   peso_total: number;
@@ -20,7 +20,7 @@ interface Stats {
 interface DetailedProductData {
   numero_crt: string;
   numero_oc: string;
-  numero_proforma: string;
+  numero_fatura: string;
   numero_ov: string;
   tipo_papel: string;
   gramatura: number;
@@ -66,12 +66,12 @@ export default function Relatorios() {
       .order('created_at', { ascending: false });
 
     if (allBobinas) {
-      const crtMap = new Map<string, { status: string; bobinas: typeof allBobinas; numero_proforma?: string }>();
+      const crtMap = new Map<string, { status: string; bobinas: typeof allBobinas; numero_fatura?: string }>();
 
       allBobinas.forEach(bobina => {
         const crt = bobina.numero_crt || 'SEM_CRT';
         if (!crtMap.has(crt)) {
-          crtMap.set(crt, { status: bobina.status, bobinas: [], numero_proforma: bobina.numero_proforma });
+          crtMap.set(crt, { status: bobina.status, bobinas: [], numero_fatura: bobina.numero_fatura });
         }
         const entry = crtMap.get(crt)!;
         if (bobina.status) {
@@ -89,7 +89,7 @@ export default function Relatorios() {
         const peso_total = value.bobinas.reduce((sum, b) => sum + Number(b.peso_kg), 0);
         const crtData: CrtData = {
           numero_crt: crt,
-          numero_proforma: value.numero_proforma || crt,
+          numero_fatura: value.numero_fatura || crt,
           status: value.status,
           bobinas_count: value.bobinas.length,
           peso_total,
@@ -120,12 +120,12 @@ export default function Relatorios() {
         const detailedProductMap = new Map<string, DetailedProductData>();
 
         allPedidos.forEach(pedido => {
-          const key = `${pedido.numero_crt || ''}-${pedido.numero_oc || ''}-${pedido.numero_proforma || ''}-${pedido.tipo_papel || ''}-${pedido.gramatura || 0}-${pedido.formato_mm || 0}`;
+          const key = `${pedido.numero_crt || ''}-${pedido.numero_oc || ''}-${pedido.numero_fatura || ''}-${pedido.tipo_papel || ''}-${pedido.gramatura || 0}-${pedido.formato_mm || 0}`;
 
           const bobinasRelacionadas = allBobinas.filter(
             b => b.numero_crt === pedido.numero_crt &&
                  b.numero_oc === pedido.numero_oc &&
-                 b.numero_proforma === pedido.numero_proforma &&
+                 b.numero_fatura === pedido.numero_fatura &&
                  b.tipo_papel === pedido.tipo_papel &&
                  b.gramatura === pedido.gramatura &&
                  b.formato_mm === pedido.formato_mm
@@ -142,7 +142,7 @@ export default function Relatorios() {
           detailedProductMap.set(key, {
             numero_crt: pedido.numero_crt || '-',
             numero_oc: pedido.numero_oc || '-',
-            numero_proforma: pedido.numero_proforma || '-',
+            numero_fatura: pedido.numero_fatura || '-',
             numero_ov: pedido.numero_ov || '-',
             tipo_papel: pedido.tipo_papel || '-',
             gramatura: pedido.gramatura || 0,
@@ -317,7 +317,7 @@ export default function Relatorios() {
                       CRT
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                      Proforma
+                      Fatura
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                       Bobinas
@@ -337,7 +337,7 @@ export default function Relatorios() {
                         {crt.numero_crt}
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-600">
-                        {crt.numero_proforma || '-'}
+                        {crt.numero_fatura || '-'}
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-600">
                         {crt.bobinas_count}
@@ -387,7 +387,7 @@ export default function Relatorios() {
                     OC
                   </th>
                   <th className="px-3 py-3 text-center text-xs font-medium text-gray-700 uppercase border border-gray-300">
-                    Proforma
+                    Fatura
                   </th>
                   <th className="px-3 py-3 text-center text-xs font-medium text-gray-700 uppercase border border-gray-300">
                     OV
@@ -453,7 +453,7 @@ export default function Relatorios() {
                       {item.numero_oc}
                     </td>
                     <td className="px-3 py-2 text-sm text-center text-gray-900 border border-gray-300">
-                      {item.numero_proforma}
+                      {item.numero_fatura}
                     </td>
                     <td className="px-3 py-2 text-sm text-center text-gray-900 border border-gray-300">
                       {item.numero_ov}
@@ -527,7 +527,7 @@ export default function Relatorios() {
                           CRT
                         </th>
                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                          Proforma
+                          Fatura
                         </th>
                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                           Bobinas
@@ -547,7 +547,7 @@ export default function Relatorios() {
                             {crt.numero_crt}
                           </td>
                           <td className="px-4 py-3 text-sm text-gray-600">
-                            {crt.numero_proforma || '-'}
+                            {crt.numero_fatura || '-'}
                           </td>
                           <td className="px-4 py-3 text-sm text-gray-600">
                             {crt.bobinas_count}

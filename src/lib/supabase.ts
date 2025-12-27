@@ -10,7 +10,7 @@ export interface Bobina {
   numero_bobina: string;
   numero_crt?: string;
   numero_oc?: string;
-  numero_proforma?: string;
+  numero_fatura?: string;
   numero_ov?: string;
   tipo_papel: string;
   gramatura: number;
@@ -36,7 +36,6 @@ export interface Pedido {
   numero_fatura?: string;
   numero_crt?: string;
   numero_oc?: string;
-  numero_proforma?: string;
   tipo_papel?: string;
   gramatura?: number;
   formato_mm?: number;

@@ -5,7 +5,7 @@ import { supabase } from '../lib/supabase';
 interface PedidoTimeline {
   id: string;
   numero_crt: string;
-  numero_proforma: string;
+  numero_fatura: string;
   dip_processado: boolean;
   status_atual: 'recebido' | 'aguardando_dip' | 'separacao' | 'carregamento' | 'aduana_br' | 'aduana_ar' | 'rota' | 'entregue';
   destinos: string[];
@@ -110,7 +110,7 @@ export default function AcompanhamentoPedidos() {
     try {
       const { data, error } = await supabase
         .from('pedidos')
-        .select('id, numero_crt, numero_proforma, dip_processado, status_pedido, destino, cancelado')
+        .select('id, numero_crt, numero_fatura, dip_processado, status_pedido, destino, cancelado')
         .not('destino', 'is', null)
         .eq('cancelado', false)
         .order('created_at', { ascending: false });

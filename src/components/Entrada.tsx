@@ -12,7 +12,7 @@ interface Bobina {
   id: string;
   numero_bobina: string;
   numero_oc: string;
-  numero_proforma: string;
+  numero_fatura: string;
   numero_ov: string;
   tipo_papel: string;
   gramatura: string;
@@ -26,7 +26,7 @@ interface Bobina {
 
 interface BobinaTemplate {
   numero_oc: string;
-  numero_proforma: string;
+  numero_fatura: string;
   numero_ov: string;
   tipo_papel: string;
   gramatura: string;
@@ -65,7 +65,7 @@ export default function Entrada() {
       if (firstBobina.tipo_papel && firstBobina.gramatura && firstBobina.formato_mm) {
         setBobinaTemplate({
           numero_oc: firstBobina.numero_oc,
-          numero_proforma: firstBobina.numero_proforma,
+          numero_fatura: firstBobina.numero_fatura,
           numero_ov: firstBobina.numero_ov,
           tipo_papel: firstBobina.tipo_papel,
           gramatura: firstBobina.gramatura,
@@ -107,7 +107,7 @@ export default function Entrada() {
       id: crypto.randomUUID(),
       numero_bobina: '',
       numero_oc: bobinaTemplate?.numero_oc || '',
-      numero_proforma: bobinaTemplate?.numero_proforma || '',
+      numero_fatura: bobinaTemplate?.numero_fatura || '',
       numero_ov: bobinaTemplate?.numero_ov || '',
       tipo_papel: bobinaTemplate?.tipo_papel || '',
       gramatura: bobinaTemplate?.gramatura || '',
@@ -216,7 +216,7 @@ export default function Entrada() {
         numero_bobina: b.numero_bobina.trim(),
         numero_crt: crtData.numero_crt.trim(),
         numero_oc: b.numero_oc?.trim() || null,
-        numero_proforma: b.numero_proforma?.trim() || null,
+        numero_fatura: b.numero_fatura?.trim() || null,
         numero_ov: b.numero_ov?.trim() || null,
         tipo_papel: b.tipo_papel,
         gramatura: parseInt(b.gramatura),
@@ -310,7 +310,7 @@ export default function Entrada() {
       } else {
         const { data: bobinasExistentes, error } = await supabase
           .from('bobinas')
-          .select('exportador, importador, origem, data_emissao, numero_oc, numero_proforma, numero_ov, tipo_papel, gramatura, formato_mm')
+          .select('exportador, importador, origem, data_emissao, numero_oc, numero_fatura, numero_ov, tipo_papel, gramatura, formato_mm')
           .eq('numero_crt', numeroCrt.trim())
           .limit(1)
           .maybeSingle();
@@ -331,7 +331,7 @@ export default function Entrada() {
 
           setBobinaTemplate({
             numero_oc: bobinasExistentes.numero_oc || '',
-            numero_proforma: bobinasExistentes.numero_proforma || '',
+            numero_fatura: bobinasExistentes.numero_fatura || '',
             numero_ov: bobinasExistentes.numero_ov || '',
             tipo_papel: bobinasExistentes.tipo_papel || '',
             gramatura: bobinasExistentes.gramatura?.toString() || '',

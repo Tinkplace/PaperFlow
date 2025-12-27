@@ -21,7 +21,7 @@ interface PedidoPendente {
   numero_crt: string;
   numero_oc: string;
   numero_ov: string;
-  numero_proforma: string;
+  numero_fatura: string;
   quantidade_bobinas: number;
   peso_total_kg: number;
   destinos: string[];
@@ -48,7 +48,7 @@ export default function Romaneio() {
     nome_motorista: '',
     placa_carreta: '',
     numero_crt: '',
-    numero_proforma: '',
+    numero_fatura: '',
     destino: '',
   });
 
@@ -63,7 +63,7 @@ export default function Romaneio() {
       .select('numero_crt')
       .eq('cancelado', false)
       .not('numero_crt', 'is', null)
-      .not('numero_proforma', 'is', null);
+      .not('numero_fatura', 'is', null);
 
     if (pedidosGerados) {
       const crtsComPedido = pedidosGerados.map(p => p.numero_crt).filter(Boolean);
@@ -86,7 +86,7 @@ export default function Romaneio() {
     try {
       const { data: pedidos, error } = await supabase
         .from('pedidos')
-        .select('id, numero_crt, numero_oc, numero_ov, numero_proforma, quantidade_bobinas, peso_total_kg, created_at')
+        .select('id, numero_crt, numero_oc, numero_ov, numero_fatura, quantidade_bobinas, peso_total_kg, created_at')
         .eq('cancelado', false)
         .not('destino', 'is', null)
         .order('created_at', { ascending: false });
@@ -175,7 +175,7 @@ export default function Romaneio() {
 
     const { data: pedidoData } = await supabase
       .from('pedidos')
-      .select('id, numero_proforma')
+      .select('id, numero_fatura')
       .eq('numero_crt', crt)
       .eq('cancelado', false)
       .maybeSingle();
@@ -194,7 +194,7 @@ export default function Romaneio() {
       setFormData(prev => ({
         ...prev,
         numero_crt: crt,
-        numero_proforma: pedidoData.numero_proforma || '',
+        numero_fatura: pedidoData.numero_fatura || '',
         destino: ''
       }));
     }
@@ -253,7 +253,7 @@ export default function Romaneio() {
           nome_motorista: formData.nome_motorista,
           placa_carreta: formData.placa_carreta,
           numero_crt: formData.numero_crt || null,
-          numero_proforma: formData.numero_proforma || null,
+          numero_fatura: formData.numero_fatura || null,
           destino: formData.destino,
           pedido_id: null,
         }])
@@ -323,7 +323,7 @@ export default function Romaneio() {
           nome_motorista: '',
           placa_carreta: '',
           numero_crt: '',
-          numero_proforma: '',
+          numero_fatura: '',
           destino: '',
         });
         setSelectedBobinas(new Set());
@@ -343,7 +343,7 @@ export default function Romaneio() {
           nome_motorista: '',
           placa_carreta: '',
           numero_crt: prev.numero_crt,
-          numero_proforma: prev.numero_proforma,
+          numero_fatura: prev.numero_fatura,
           destino: '',
         }));
         setSelectedBobinas(new Set());
@@ -476,10 +476,10 @@ export default function Romaneio() {
               <div class="info-value">${romaneio.numero_crt}</div>
             </div>
             ` : ''}
-            ${romaneio.numero_proforma ? `
+            ${romaneio.numero_fatura ? `
             <div class="info-item">
-              <div class="info-label">Número Proforma</div>
-              <div class="info-value">${romaneio.numero_proforma}</div>
+              <div class="info-label">Número Fatura</div>
+              <div class="info-value">${romaneio.numero_fatura}</div>
             </div>
             ` : ''}
           </div>
@@ -741,11 +741,11 @@ export default function Romaneio() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Número da Proforma (Automático)
+                Número da Fatura (Automático)
               </label>
               <input
                 type="text"
-                value={formData.numero_proforma}
+                value={formData.numero_fatura}
                 readOnly
                 className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700 cursor-not-allowed"
               />
@@ -873,7 +873,7 @@ export default function Romaneio() {
                               OV: {pedido.numero_ov || 'N/A'} • OC: {pedido.numero_oc || 'N/A'}
                             </p>
                             <p className="text-sm text-gray-600">
-                              Proforma: {pedido.numero_proforma || 'N/A'}
+                              Fatura: {pedido.numero_fatura || 'N/A'}
                             </p>
                           </div>
                         </div>
