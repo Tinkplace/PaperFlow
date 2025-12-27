@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { Package, FileText, Truck, BarChart3, MapPin, CheckSquare, LogOut, ClipboardList, Archive } from 'lucide-react';
+import { Package, FileText, Truck, BarChart3, MapPin, CheckSquare, LogOut, ClipboardList, Archive, Globe } from 'lucide-react';
 import Entrada from './components/Entrada';
 import Estoque from './components/Estoque';
 import Saida from './components/Saida';
+import CrossBorder from './components/CrossBorder';
 import Pedidos from './components/Pedidos';
 import AcompanhamentoPedidos from './components/AcompanhamentoPedidos';
 import ControleDips from './components/ControleDips';
@@ -10,7 +11,7 @@ import Romaneio from './components/Romaneio';
 import Relatorios from './components/Relatorios';
 import PreCadastro from './components/PreCadastro';
 
-type Tab = 'entrada' | 'estoque' | 'saida' | 'pedidos' | 'acompanhamento' | 'controle-dips' | 'romaneio' | 'relatorios' | 'pre-cadastro';
+type Tab = 'entrada' | 'estoque' | 'saida' | 'cross-border' | 'pedidos' | 'acompanhamento' | 'controle-dips' | 'romaneio' | 'relatorios' | 'pre-cadastro';
 
 function App() {
   const [activeTab, setActiveTab] = useState<Tab>('entrada');
@@ -102,6 +103,17 @@ function App() {
             <span>Saída</span>
           </button>
           <button
+            onClick={() => setActiveTab('cross-border')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
+              activeTab === 'cross-border'
+                ? 'bg-white bg-opacity-10 text-white border border-white border-opacity-20'
+                : 'text-gray-300 hover:bg-white hover:bg-opacity-5 border border-transparent'
+            }`}
+          >
+            <Globe className="w-5 h-5" />
+            <span>Cross Border</span>
+          </button>
+          <button
             onClick={() => setActiveTab('acompanhamento')}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
               activeTab === 'acompanhamento'
@@ -134,6 +146,7 @@ function App() {
               {activeTab === 'estoque' && 'Gestão de Estoque'}
               {activeTab === 'pre-cadastro' && 'Pré Cadastro de CRT'}
               {activeTab === 'saida' && 'Registro de Saída'}
+              {activeTab === 'cross-border' && 'Cross Border'}
               {activeTab === 'pedidos' && 'Gerenciar Pedidos'}
               {activeTab === 'acompanhamento' && 'Status dos Pedidos'}
               {activeTab === 'controle-dips' && 'Controle de DIPs'}
@@ -148,6 +161,7 @@ function App() {
           {activeTab === 'estoque' && <Estoque />}
           {activeTab === 'pre-cadastro' && <PreCadastro />}
           {activeTab === 'saida' && <Saida />}
+          {activeTab === 'cross-border' && <CrossBorder />}
           {activeTab === 'pedidos' && <Pedidos />}
           {activeTab === 'acompanhamento' && <AcompanhamentoPedidos />}
           {activeTab === 'controle-dips' && <ControleDips />}
