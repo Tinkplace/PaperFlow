@@ -48,6 +48,8 @@ export default function Saida() {
 
     setLoading(true);
     try {
+      const romaneioSelecionado = romaneios.find(r => r.id === selectedRomaneioId);
+
       const { error: updateError } = await supabase
         .from('romaneios')
         .update({ data_hora_saida: dataHoraSaida })
@@ -71,6 +73,26 @@ export default function Saida() {
           .in('id', bobinasIds);
 
         if (bobinaUpdateError) throw bobinaUpdateError;
+      }
+
+      if (romaneioSelecionado?.numero_crt) {
+        const { data: romaneiosPendentes, error: romaneiosError } = await supabase
+          .from('romaneios')
+          .select('id')
+          .eq('numero_crt', romaneioSelecionado.numero_crt)
+          .is('data_hora_saida', null);
+
+        if (romaneiosError) throw romaneiosError;
+
+        if (romaneiosPendentes && romaneiosPendentes.length === 0) {
+          const { error: pedidoUpdateError } = await supabase
+            .from('pedidos')
+            .update({ status_pedido: 'aduana_br' })
+            .eq('numero_crt', romaneioSelecionado.numero_crt)
+            .eq('cancelado', false);
+
+          if (pedidoUpdateError) throw pedidoUpdateError;
+        }
       }
 
       alert('Saída registrada com sucesso!');
