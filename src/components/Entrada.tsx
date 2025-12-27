@@ -1,6 +1,6 @@
-import { useState, FormEvent } from 'react';
+import { useState, FormEvent, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { Save, Plus, Trash2, FileText } from 'lucide-react';
+import { Save, Plus, Trash2, FileText, Edit2 } from 'lucide-react';
 
 interface NotaFiscal {
   id: string;
@@ -36,9 +36,12 @@ interface BobinaTemplate {
 export default function Entrada() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [editingBobinaId, setEditingBobinaId] = useState<string | null>(null);
 
   const [crtData, setCrtData] = useState({
     numero_crt: '',
+    ov: '',
+    oc: '',
     exportador: '',
     importador: '',
     origem: '',
@@ -48,11 +51,29 @@ export default function Entrada() {
     placa_cavalo: '',
     placa_carreta: '',
     nome_motorista: '',
+    volumes_programados_qtd: 0,
+    volumes_programados_kg: 0,
   });
 
   const [notasFiscais, setNotasFiscais] = useState<NotaFiscal[]>([]);
   const [bobinas, setBobinas] = useState<Bobina[]>([]);
   const [bobinaTemplate, setBobinaTemplate] = useState<BobinaTemplate | null>(null);
+
+  useEffect(() => {
+    if (bobinas.length > 0 && !bobinaTemplate) {
+      const firstBobina = bobinas[0];
+      if (firstBobina.tipo_papel && firstBobina.gramatura && firstBobina.formato_mm) {
+        setBobinaTemplate({
+          numero_oc: firstBobina.numero_oc,
+          numero_proforma: firstBobina.numero_proforma,
+          numero_ov: firstBobina.numero_ov,
+          tipo_papel: firstBobina.tipo_papel,
+          gramatura: firstBobina.gramatura,
+          formato_mm: firstBobina.formato_mm,
+        });
+      }
+    }
+  }, [bobinas, bobinaTemplate]);
 
   const addNotaFiscal = () => {
     if (notasFiscais.length >= 50) {
@@ -107,6 +128,14 @@ export default function Entrada() {
     setBobinas(bobinas.map(b =>
       b.id === id ? { ...b, [field]: value } : b
     ));
+  };
+
+  const startEditBobina = (id: string) => {
+    setEditingBobinaId(id);
+  };
+
+  const saveEditBobina = () => {
+    setEditingBobinaId(null);
   };
 
   const handleSubmit = async (e: FormEvent) => {
@@ -206,6 +235,8 @@ export default function Entrada() {
       setSuccess(true);
       setCrtData({
         numero_crt: '',
+        ov: '',
+        oc: '',
         exportador: '',
         importador: '',
         origem: '',
@@ -215,9 +246,12 @@ export default function Entrada() {
         placa_cavalo: '',
         placa_carreta: '',
         nome_motorista: '',
+        volumes_programados_qtd: 0,
+        volumes_programados_kg: 0,
       });
       setNotasFiscais([]);
       setBobinas([]);
+      setBobinaTemplate(null);
 
       setTimeout(() => setSuccess(false), 3000);
     } catch (error) {
@@ -235,35 +269,59 @@ export default function Entrada() {
     }
 
     try {
-      const { data: bobinasExistentes, error } = await supabase
-        .from('bobinas')
-        .select('exportador, importador, origem, data_emissao, numero_oc, numero_proforma, numero_ov, tipo_papel, gramatura, formato_mm')
+      const { data: preCadastro, error: preCadastroError } = await supabase
+        .from('pre_cadastro')
+        .select('*')
         .eq('numero_crt', numeroCrt.trim())
-        .limit(1)
         .maybeSingle();
 
-      if (error) {
-        console.error('Erro ao buscar dados do CRT:', error);
-        return;
+      if (preCadastroError) {
+        console.error('Erro ao buscar pré-cadastro:', preCadastroError);
       }
 
-      if (bobinasExistentes) {
+      if (preCadastro) {
         setCrtData(prev => ({
           ...prev,
-          exportador: bobinasExistentes.exportador || '',
-          importador: bobinasExistentes.importador || '',
-          origem: bobinasExistentes.origem || '',
-          data_emissao: bobinasExistentes.data_emissao || '',
+          ov: preCadastro.ov || '',
+          oc: preCadastro.oc || '',
+          exportador: preCadastro.exportador || '',
+          importador: preCadastro.importador || '',
+          origem: preCadastro.origem || '',
+          data_emissao: preCadastro.data_emissao_crt || '',
+          volumes_programados_qtd: preCadastro.volumes_programados_qtd || 0,
+          volumes_programados_kg: preCadastro.volumes_programados_kg || 0,
         }));
+      } else {
+        const { data: bobinasExistentes, error } = await supabase
+          .from('bobinas')
+          .select('exportador, importador, origem, data_emissao, numero_oc, numero_proforma, numero_ov, tipo_papel, gramatura, formato_mm')
+          .eq('numero_crt', numeroCrt.trim())
+          .limit(1)
+          .maybeSingle();
 
-        setBobinaTemplate({
-          numero_oc: bobinasExistentes.numero_oc || '',
-          numero_proforma: bobinasExistentes.numero_proforma || '',
-          numero_ov: bobinasExistentes.numero_ov || '',
-          tipo_papel: bobinasExistentes.tipo_papel || '',
-          gramatura: bobinasExistentes.gramatura?.toString() || '',
-          formato_mm: bobinasExistentes.formato_mm?.toString() || '',
-        });
+        if (error) {
+          console.error('Erro ao buscar dados do CRT:', error);
+          return;
+        }
+
+        if (bobinasExistentes) {
+          setCrtData(prev => ({
+            ...prev,
+            exportador: bobinasExistentes.exportador || '',
+            importador: bobinasExistentes.importador || '',
+            origem: bobinasExistentes.origem || '',
+            data_emissao: bobinasExistentes.data_emissao || '',
+          }));
+
+          setBobinaTemplate({
+            numero_oc: bobinasExistentes.numero_oc || '',
+            numero_proforma: bobinasExistentes.numero_proforma || '',
+            numero_ov: bobinasExistentes.numero_ov || '',
+            tipo_papel: bobinasExistentes.tipo_papel || '',
+            gramatura: bobinasExistentes.gramatura?.toString() || '',
+            formato_mm: bobinasExistentes.formato_mm?.toString() || '',
+          });
+        }
       }
     } catch (error) {
       console.error('Erro ao carregar dados do CRT:', error);
@@ -304,6 +362,35 @@ export default function Entrada() {
                 onChange={handleCrtChange}
                 required
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Digite o número do CRT"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                OV (Ordem de Venda)
+              </label>
+              <input
+                type="text"
+                name="ov"
+                value={crtData.ov}
+                readOnly
+                className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-600"
+                placeholder="Carregado do pré-cadastro"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                OC (Ordem de Compra)
+              </label>
+              <input
+                type="text"
+                name="oc"
+                value={crtData.oc}
+                readOnly
+                className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-600"
+                placeholder="Carregado do pré-cadastro"
               />
             </div>
 
@@ -315,8 +402,9 @@ export default function Entrada() {
                 type="text"
                 name="exportador"
                 value={crtData.exportador}
-                onChange={handleCrtChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                readOnly
+                className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-600"
+                placeholder="Carregado do pré-cadastro"
               />
             </div>
 
@@ -328,8 +416,9 @@ export default function Entrada() {
                 type="text"
                 name="importador"
                 value={crtData.importador}
-                onChange={handleCrtChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                readOnly
+                className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-600"
+                placeholder="Carregado do pré-cadastro"
               />
             </div>
 
@@ -337,36 +426,56 @@ export default function Entrada() {
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Origem
               </label>
-              <select
+              <input
+                type="text"
                 name="origem"
                 value={crtData.origem}
-                onChange={handleCrtChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">Selecione</option>
-                <option value="uruguaiana">Uruguaiana</option>
-                <option value="otacilio costa">Otacílio Costa</option>
-                <option value="ortigueira">Ortigueira</option>
-                <option value="telemaco">Telêmaco</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Data de Emissão (Automático)
-              </label>
-              <input
-                type="date"
-                name="data_emissao"
-                value={crtData.data_emissao}
-                onChange={handleCrtChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                readOnly
+                className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-600"
+                placeholder="Carregado do pré-cadastro"
               />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Data/Hora Entrada
+                Data de Emissão do CRT
+              </label>
+              <input
+                type="date"
+                name="data_emissao"
+                value={crtData.data_emissao}
+                readOnly
+                className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-600"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Vol. Programados (Qtd)
+              </label>
+              <input
+                type="number"
+                value={crtData.volumes_programados_qtd}
+                readOnly
+                className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-600"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Vol. Programados (Kg)
+              </label>
+              <input
+                type="number"
+                value={crtData.volumes_programados_kg}
+                readOnly
+                className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-600"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Data de Entrada (Pátio)
               </label>
               <input
                 type="datetime-local"
@@ -379,7 +488,7 @@ export default function Entrada() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Data/Hora Descarga
+                Data da Descarga
               </label>
               <input
                 type="datetime-local"
@@ -392,7 +501,7 @@ export default function Entrada() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Placa Cavalo
+                Placa do Cavalo
               </label>
               <input
                 type="text"
@@ -400,12 +509,13 @@ export default function Entrada() {
                 value={crtData.placa_cavalo}
                 onChange={handleCrtChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Ex: ABC-1234"
               />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Placa Carreta
+                Placa da Carreta
               </label>
               <input
                 type="text"
@@ -413,6 +523,7 @@ export default function Entrada() {
                 value={crtData.placa_carreta}
                 onChange={handleCrtChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Ex: DEF-5678"
               />
             </div>
 
@@ -426,6 +537,7 @@ export default function Entrada() {
                 value={crtData.nome_motorista}
                 onChange={handleCrtChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Nome completo"
               />
             </div>
           </div>
@@ -516,39 +628,6 @@ export default function Entrada() {
                               onChange={(e) => updateBobina(bobina.id, 'numero_bobina', e.target.value)}
                               className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
                               placeholder="Ex: 001"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-medium text-gray-700 mb-1">
-                              OC
-                            </label>
-                            <input
-                              type="text"
-                              value={bobina.numero_oc}
-                              onChange={(e) => updateBobina(bobina.id, 'numero_oc', e.target.value)}
-                              className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-medium text-gray-700 mb-1">
-                              Proforma
-                            </label>
-                            <input
-                              type="text"
-                              value={bobina.numero_proforma}
-                              onChange={(e) => updateBobina(bobina.id, 'numero_proforma', e.target.value)}
-                              className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-medium text-gray-700 mb-1">
-                              OV
-                            </label>
-                            <input
-                              type="text"
-                              value={bobina.numero_ov}
-                              onChange={(e) => updateBobina(bobina.id, 'numero_ov', e.target.value)}
-                              className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
                             />
                           </div>
                           <div>
@@ -651,13 +730,30 @@ export default function Entrada() {
                               placeholder="Ex: 01"
                             />
                           </div>
-                          <div className="flex items-end">
+                          <div className="flex items-end gap-1">
+                            {editingBobinaId === bobina.id ? (
+                              <button
+                                type="button"
+                                onClick={saveEditBobina}
+                                className="flex-1 px-2 py-1 text-green-600 hover:bg-green-50 rounded text-xs border border-green-300 font-medium"
+                              >
+                                Salvar
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => startEditBobina(bobina.id)}
+                                className="flex-1 px-2 py-1 text-blue-600 hover:bg-blue-50 rounded text-xs border border-blue-300"
+                              >
+                                <Edit2 className="w-3 h-3 mx-auto" />
+                              </button>
+                            )}
                             <button
                               type="button"
                               onClick={() => removeBobina(bobina.id)}
-                              className="w-full px-2 py-1 text-red-600 hover:bg-red-50 rounded text-sm border border-red-300"
+                              className="flex-1 px-2 py-1 text-red-600 hover:bg-red-50 rounded text-xs border border-red-300"
                             >
-                              Remover
+                              <Trash2 className="w-3 h-3 mx-auto" />
                             </button>
                           </div>
                         </div>
