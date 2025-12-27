@@ -82,6 +82,19 @@ export default function PreCadastro() {
 
     try {
       if (editingId) {
+        const { data: existingCrt } = await supabase
+          .from('pre_cadastro')
+          .select('id')
+          .eq('numero_crt', formData.numero_crt)
+          .neq('id', editingId)
+          .maybeSingle();
+
+        if (existingCrt) {
+          alert(`Erro: O CRT "${formData.numero_crt}" já está cadastrado no sistema. Por favor, use um número diferente.`);
+          setLoading(false);
+          return;
+        }
+
         const { error } = await supabase
           .from('pre_cadastro')
           .update(formData)
@@ -90,6 +103,18 @@ export default function PreCadastro() {
         if (error) throw error;
         alert('Registro atualizado com sucesso!');
       } else {
+        const { data: existingCrt } = await supabase
+          .from('pre_cadastro')
+          .select('id')
+          .eq('numero_crt', formData.numero_crt)
+          .maybeSingle();
+
+        if (existingCrt) {
+          alert(`Erro: O CRT "${formData.numero_crt}" já está cadastrado no sistema. Por favor, use um número diferente.`);
+          setLoading(false);
+          return;
+        }
+
         const { error } = await supabase
           .from('pre_cadastro')
           .insert([formData]);
@@ -102,7 +127,11 @@ export default function PreCadastro() {
       loadRegistros();
     } catch (error: any) {
       console.error('Erro ao salvar:', error);
-      alert('Erro ao salvar: ' + error.message);
+      if (error.code === '23505' || error.message?.includes('duplicate key')) {
+        alert(`Erro: O CRT "${formData.numero_crt}" já está cadastrado no sistema. Por favor, use um número diferente.`);
+      } else {
+        alert('Erro ao salvar: ' + error.message);
+      }
     } finally {
       setLoading(false);
     }

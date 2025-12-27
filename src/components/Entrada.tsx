@@ -150,6 +150,18 @@ export default function Entrada() {
         return;
       }
 
+      const { data: existingBobinas } = await supabase
+        .from('bobinas')
+        .select('numero_bobina')
+        .eq('numero_crt', crtData.numero_crt.trim())
+        .limit(1);
+
+      if (existingBobinas && existingBobinas.length > 0) {
+        alert(`Erro: O CRT "${crtData.numero_crt}" já possui bobinas cadastradas no sistema. Use um número de CRT diferente ou verifique os dados já inseridos.`);
+        setLoading(false);
+        return;
+      }
+
       if (notasFiscais.length === 0) {
         alert('Adicione pelo menos uma nota fiscal');
         setLoading(false);
@@ -254,9 +266,13 @@ export default function Entrada() {
       setBobinaTemplate(null);
 
       setTimeout(() => setSuccess(false), 3000);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao salvar entrada:', error);
-      alert('Erro ao salvar entrada. Verifique os dados e tente novamente.');
+      if (error.message?.includes('duplicate') || error.code === '23505') {
+        alert(`Erro: Já existe um registro com este CRT "${crtData.numero_crt}" no sistema. Por favor, use um número diferente.`);
+      } else {
+        alert('Erro ao salvar entrada: ' + (error.message || 'Verifique os dados e tente novamente.'));
+      }
     } finally {
       setLoading(false);
     }
