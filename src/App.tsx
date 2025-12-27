@@ -1,17 +1,18 @@
 import { useState } from 'react';
-import { Package, FileText, Truck, BarChart3, MapPin, CheckSquare, LogOut, ClipboardList, Archive, Globe } from 'lucide-react';
+import { Package, FileText, Truck, BarChart3, MapPin, CheckSquare, LogOut, ClipboardList, Archive, Globe, TrendingUp } from 'lucide-react';
 import Entrada from './components/Entrada';
 import Estoque from './components/Estoque';
 import Saida from './components/Saida';
 import CrossBorder from './components/CrossBorder';
 import Pedidos from './components/Pedidos';
 import AcompanhamentoPedidos from './components/AcompanhamentoPedidos';
+import IndicadorOTIF from './components/IndicadorOTIF';
 import ControleDips from './components/ControleDips';
 import Romaneio from './components/Romaneio';
 import Relatorios from './components/Relatorios';
 import PreCadastro from './components/PreCadastro';
 
-type Tab = 'entrada' | 'estoque' | 'saida' | 'cross-border' | 'pedidos' | 'acompanhamento' | 'controle-dips' | 'romaneio' | 'relatorios' | 'pre-cadastro';
+type Tab = 'entrada' | 'estoque' | 'saida' | 'cross-border' | 'pedidos' | 'acompanhamento' | 'indicador-otif' | 'controle-dips' | 'romaneio' | 'relatorios' | 'pre-cadastro';
 
 function App() {
   const [activeTab, setActiveTab] = useState<Tab>('entrada');
@@ -125,6 +126,17 @@ function App() {
             <span>Status dos Pedidos</span>
           </button>
           <button
+            onClick={() => setActiveTab('indicador-otif')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
+              activeTab === 'indicador-otif'
+                ? 'bg-white bg-opacity-10 text-white border border-white border-opacity-20'
+                : 'text-gray-300 hover:bg-white hover:bg-opacity-5 border border-transparent'
+            }`}
+          >
+            <TrendingUp className="w-5 h-5" />
+            <span>Indicador OTIF</span>
+          </button>
+          <button
             onClick={() => setActiveTab('relatorios')}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
               activeTab === 'relatorios'
@@ -149,6 +161,7 @@ function App() {
               {activeTab === 'cross-border' && 'Cross Border'}
               {activeTab === 'pedidos' && 'Gerenciar Pedidos'}
               {activeTab === 'acompanhamento' && 'Status dos Pedidos'}
+              {activeTab === 'indicador-otif' && 'Indicador OTIF'}
               {activeTab === 'controle-dips' && 'Controle de DIPs'}
               {activeTab === 'romaneio' && 'Romaneios'}
               {activeTab === 'relatorios' && 'Relatórios e Análise'}
@@ -164,6 +177,7 @@ function App() {
           {activeTab === 'cross-border' && <CrossBorder />}
           {activeTab === 'pedidos' && <Pedidos />}
           {activeTab === 'acompanhamento' && <AcompanhamentoPedidos />}
+          {activeTab === 'indicador-otif' && <IndicadorOTIF />}
           {activeTab === 'controle-dips' && <ControleDips />}
           {activeTab === 'romaneio' && <Romaneio />}
           {activeTab === 'relatorios' && <Relatorios />}

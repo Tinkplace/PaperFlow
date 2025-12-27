@@ -46,9 +46,17 @@ export default function CrossBorder() {
 
     setLoading(true);
     try {
+      const updateData: { status_pedido: string; data_entrega?: string } = {
+        status_pedido: selectedStatus
+      };
+
+      if (selectedStatus === 'entregue') {
+        updateData.data_entrega = new Date().toISOString();
+      }
+
       const { error } = await supabase
         .from('pedidos')
-        .update({ status_pedido: selectedStatus })
+        .update(updateData)
         .eq('id', selectedPedidoId);
 
       if (error) throw error;

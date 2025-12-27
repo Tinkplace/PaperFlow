@@ -50,12 +50,15 @@ export default function ControleDips() {
   const handleToggleDip = async (pedidoId: string, currentStatus: boolean) => {
     try {
       const newStatus = !currentStatus;
-      const updateData: { dip_processado: boolean; status_pedido?: string } = {
+      const updateData: { dip_processado: boolean; status_pedido?: string; data_dip_processado?: string | null } = {
         dip_processado: newStatus
       };
 
       if (newStatus) {
         updateData.status_pedido = 'separacao';
+        updateData.data_dip_processado = new Date().toISOString();
+      } else {
+        updateData.data_dip_processado = null;
       }
 
       const { error } = await supabase
