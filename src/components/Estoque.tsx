@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, Package, Filter, Download } from 'lucide-react';
+import { Search, Package, Filter, Download, FileText, CheckCircle, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 interface BobinaEstoque {
@@ -27,6 +27,8 @@ interface BobinaEstoque {
   quadra: string;
   linha: string;
   nota_fiscal_id: string;
+  numero_fatura: string;
+  carga_completa: boolean;
   created_at: string;
 }
 
@@ -48,6 +50,16 @@ export default function Estoque() {
     exportador: '',
     importador: '',
   });
+  const [modalFatura, setModalFatura] = useState<{ isOpen: boolean; crtSelecionado: string; faturaAtual: string }>({
+    isOpen: false,
+    crtSelecionado: '',
+    faturaAtual: '',
+  });
+  const [modalCargaCompleta, setModalCargaCompleta] = useState<{ isOpen: boolean; crtSelecionado: string }>({
+    isOpen: false,
+    crtSelecionado: '',
+  });
+  const [numeroFatura, setNumeroFatura] = useState('');
 
   useEffect(() => {
     loadEstoque();
@@ -149,6 +161,8 @@ export default function Estoque() {
       'Importador',
       'Origem',
       'Nota Fiscal',
+      'Fatura',
+      'Carga Completa',
       'Rua',
       'Quadra',
       'Linha',
@@ -169,6 +183,8 @@ export default function Estoque() {
       b.importador,
       b.origem,
       notasFiscais.get(b.nota_fiscal_id)?.numero_nota_fiscal || '',
+      b.numero_fatura || '',
+      b.carga_completa ? 'Sim' : 'Não',
       b.rua,
       b.quadra,
       b.linha,
@@ -186,6 +202,76 @@ export default function Estoque() {
     link.click();
   };
 
+  const abrirModalFatura = (crt: string, faturaAtual: string) => {
+    setModalFatura({ isOpen: true, crtSelecionado: crt, faturaAtual });
+    setNumeroFatura(faturaAtual || '');
+  };
+
+  const fecharModalFatura = () => {
+    setModalFatura({ isOpen: false, crtSelecionado: '', faturaAtual: '' });
+    setNumeroFatura('');
+  };
+
+  const salvarFatura = async () => {
+    if (!modalFatura.crtSelecionado) return;
+
+    try {
+      const { error } = await supabase
+        .from('bobinas')
+        .update({ numero_fatura: numeroFatura.trim() || null })
+        .eq('numero_crt', modalFatura.crtSelecionado)
+        .eq('status', 'em_estoque');
+
+      if (error) throw error;
+
+      setBobinas(bobinas.map(b =>
+        b.numero_crt === modalFatura.crtSelecionado
+          ? { ...b, numero_fatura: numeroFatura.trim() || '' }
+          : b
+      ));
+
+      fecharModalFatura();
+      alert('Número da fatura atualizado com sucesso!');
+    } catch (error) {
+      console.error('Erro ao salvar fatura:', error);
+      alert('Erro ao salvar fatura');
+    }
+  };
+
+  const abrirModalCargaCompleta = (crt: string) => {
+    setModalCargaCompleta({ isOpen: true, crtSelecionado: crt });
+  };
+
+  const fecharModalCargaCompleta = () => {
+    setModalCargaCompleta({ isOpen: false, crtSelecionado: '' });
+  };
+
+  const marcarCargaCompleta = async () => {
+    if (!modalCargaCompleta.crtSelecionado) return;
+
+    try {
+      const { error } = await supabase
+        .from('bobinas')
+        .update({ carga_completa: true })
+        .eq('numero_crt', modalCargaCompleta.crtSelecionado)
+        .eq('status', 'em_estoque');
+
+      if (error) throw error;
+
+      setBobinas(bobinas.map(b =>
+        b.numero_crt === modalCargaCompleta.crtSelecionado
+          ? { ...b, carga_completa: true }
+          : b
+      ));
+
+      fecharModalCargaCompleta();
+      alert('Carga marcada como completa!');
+    } catch (error) {
+      console.error('Erro ao marcar carga completa:', error);
+      alert('Erro ao marcar carga completa');
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -194,8 +280,84 @@ export default function Estoque() {
     );
   }
 
+  const crtsUnicos = Array.from(new Set(bobinasFiltradas.map(b => b.numero_crt)));
+
   return (
     <div className="space-y-6">
+      {modalFatura.isOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Inserir Número da Fatura</h3>
+              <button onClick={fecharModalFatura} className="text-gray-400 hover:text-gray-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="mb-4">
+              <p className="text-sm text-gray-600 mb-2">CRT: <span className="font-semibold">{modalFatura.crtSelecionado}</span></p>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Número da Fatura
+              </label>
+              <input
+                type="text"
+                value={numeroFatura}
+                onChange={(e) => setNumeroFatura(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Digite o número da fatura"
+                autoFocus
+              />
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={salvarFatura}
+                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Salvar
+              </button>
+              <button
+                onClick={fecharModalFatura}
+                className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {modalCargaCompleta.isOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Confirmar Carga Completa</h3>
+              <button onClick={fecharModalCargaCompleta} className="text-gray-400 hover:text-gray-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="mb-6">
+              <p className="text-sm text-gray-600 mb-2">CRT: <span className="font-semibold">{modalCargaCompleta.crtSelecionado}</span></p>
+              <p className="text-sm text-gray-700">
+                Deseja marcar todas as bobinas deste CRT como carga completa?
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={marcarCargaCompleta}
+                className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
+              >
+                <CheckCircle className="w-4 h-4" />
+                Confirmar
+              </button>
+              <button
+                onClick={fecharModalCargaCompleta}
+                className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200">
           <div className="flex items-center justify-between">
@@ -352,6 +514,62 @@ export default function Estoque() {
         </div>
       </div>
 
+      <div className="bg-white rounded-lg shadow-md p-4 border border-gray-200">
+        <h3 className="text-md font-semibold text-gray-800 mb-3">Gerenciamento por CRT</h3>
+        <div className="space-y-2">
+          {crtsUnicos.map(crt => {
+            const bobinasDoCrt = bobinasFiltradas.filter(b => b.numero_crt === crt);
+            const primeiraFatura = bobinasDoCrt[0]?.numero_fatura || '';
+            const cargaCompleta = bobinasDoCrt[0]?.carga_completa || false;
+
+            return (
+              <div key={crt} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-gray-900">CRT: {crt}</p>
+                  <p className="text-xs text-gray-600">
+                    {bobinasDoCrt.length} bobinas • {bobinasDoCrt.reduce((sum, b) => sum + b.peso_kg, 0).toLocaleString('pt-BR', { maximumFractionDigits: 2 })} kg
+                  </p>
+                  {primeiraFatura && (
+                    <p className="text-xs text-gray-600 mt-1">
+                      Fatura: <span className="font-medium">{primeiraFatura}</span>
+                    </p>
+                  )}
+                  {cargaCompleta && (
+                    <p className="text-xs text-green-600 mt-1 flex items-center gap-1">
+                      <CheckCircle className="w-3 h-3" />
+                      Carga Completa
+                    </p>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => abrirModalFatura(crt, primeiraFatura)}
+                    className="flex items-center gap-1 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs"
+                  >
+                    <FileText className="w-3 h-3" />
+                    {primeiraFatura ? 'Editar Fatura' : 'Inserir Fatura'}
+                  </button>
+                  {!cargaCompleta && (
+                    <button
+                      onClick={() => abrirModalCargaCompleta(crt)}
+                      className="flex items-center gap-1 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-xs"
+                    >
+                      <CheckCircle className="w-3 h-3" />
+                      Carga Completa
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+          {crtsUnicos.length === 0 && (
+            <p className="text-center text-gray-500 py-4 text-sm">
+              Nenhum CRT encontrado no estoque.
+            </p>
+          )}
+        </div>
+      </div>
+
       <div className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
           <div className="flex items-center justify-between">
@@ -400,17 +618,23 @@ export default function Estoque() {
                   Importador
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Fatura
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Endereço
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Data Entrada
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Status
                 </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {bobinasFiltradas.length === 0 ? (
                 <tr>
-                  <td colSpan={12} className="px-6 py-8 text-center text-gray-500">
+                  <td colSpan={13} className="px-6 py-8 text-center text-gray-500">
                     {bobinas.length === 0
                       ? 'Nenhuma bobina em estoque.'
                       : 'Nenhuma bobina corresponde aos filtros aplicados.'}
@@ -450,6 +674,9 @@ export default function Estoque() {
                       {bobina.importador || '-'}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
+                      {bobina.numero_fatura || '-'}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
                       {bobina.rua && bobina.quadra && bobina.linha
                         ? `${bobina.rua}-${bobina.quadra}-${bobina.linha}`
                         : '-'}
@@ -458,6 +685,18 @@ export default function Estoque() {
                       {bobina.data_entrada
                         ? new Date(bobina.data_entrada).toLocaleDateString('pt-BR')
                         : '-'}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm">
+                      {bobina.carga_completa ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
+                          <CheckCircle className="w-3 h-3" />
+                          Completa
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center px-2 py-1 bg-gray-100 text-gray-600 rounded-full text-xs">
+                          Pendente
+                        </span>
+                      )}
                     </td>
                   </tr>
                 ))
