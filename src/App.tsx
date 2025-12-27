@@ -24,17 +24,6 @@ function App() {
 
         <nav className="p-4 space-y-2">
           <button
-            onClick={() => setActiveTab('entrada')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
-              activeTab === 'entrada'
-                ? 'bg-white bg-opacity-10 text-white border border-white border-opacity-20'
-                : 'text-gray-300 hover:bg-white hover:bg-opacity-5 border border-transparent'
-            }`}
-          >
-            <Package className="w-5 h-5" />
-            <span>Entrada</span>
-          </button>
-          <button
             onClick={() => setActiveTab('pre-cadastro')}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
               activeTab === 'pre-cadastro'
@@ -46,15 +35,15 @@ function App() {
             <span>Pré Cadastro</span>
           </button>
           <button
-            onClick={() => setActiveTab('saida')}
+            onClick={() => setActiveTab('entrada')}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
-              activeTab === 'saida'
+              activeTab === 'entrada'
                 ? 'bg-white bg-opacity-10 text-white border border-white border-opacity-20'
                 : 'text-gray-300 hover:bg-white hover:bg-opacity-5 border border-transparent'
             }`}
           >
-            <LogOut className="w-5 h-5" />
-            <span>Saída</span>
+            <Package className="w-5 h-5" />
+            <span>Entrada</span>
           </button>
           <button
             onClick={() => setActiveTab('pedidos')}
@@ -66,17 +55,6 @@ function App() {
           >
             <FileText className="w-5 h-5" />
             <span>Pedidos</span>
-          </button>
-          <button
-            onClick={() => setActiveTab('acompanhamento')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
-              activeTab === 'acompanhamento'
-                ? 'bg-white bg-opacity-10 text-white border border-white border-opacity-20'
-                : 'text-gray-300 hover:bg-white hover:bg-opacity-5 border border-transparent'
-            }`}
-          >
-            <MapPin className="w-5 h-5" />
-            <span>Status dos Pedidos</span>
           </button>
           <button
             onClick={() => setActiveTab('controle-dips')}
@@ -99,6 +77,28 @@ function App() {
           >
             <Truck className="w-5 h-5" />
             <span>Romaneio</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('saida')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
+              activeTab === 'saida'
+                ? 'bg-white bg-opacity-10 text-white border border-white border-opacity-20'
+                : 'text-gray-300 hover:bg-white hover:bg-opacity-5 border border-transparent'
+            }`}
+          >
+            <LogOut className="w-5 h-5" />
+            <span>Saída</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('acompanhamento')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
+              activeTab === 'acompanhamento'
+                ? 'bg-white bg-opacity-10 text-white border border-white border-opacity-20'
+                : 'text-gray-300 hover:bg-white hover:bg-opacity-5 border border-transparent'
+            }`}
+          >
+            <MapPin className="w-5 h-5" />
+            <span>Status dos Pedidos</span>
           </button>
           <button
             onClick={() => setActiveTab('relatorios')}
