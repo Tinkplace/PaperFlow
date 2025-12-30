@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { Package, Truck, Clock, CheckCircle, Search, Download } from 'lucide-react';
+import { Package, Truck, Clock, CheckCircle, Search, Download, FileText } from 'lucide-react';
 
 interface CrtData {
   numero_crt: string;
@@ -17,10 +17,26 @@ interface CrtData {
   importador?: string;
 }
 
+interface PedidoData {
+  id: string;
+  numero_crt: string;
+  numero_ov: string;
+  numero_fatura: string;
+  tipo_papel: string;
+  gramatura: number;
+  formato_mm: number;
+  quantidade_bobinas: number;
+  peso_total_kg: number;
+  destinos: string[];
+  created_at: string;
+  cancelado: boolean;
+}
+
 type FilterType = 'todos' | 'carga_completa' | 'saida' | 'pendentes';
 
 export default function Relatorios() {
   const [crts, setCrts] = useState<CrtData[]>([]);
+  const [pedidos, setPedidos] = useState<PedidoData[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterType, setFilterType] = useState<FilterType>('todos');
   const [searchCrt, setSearchCrt] = useState('');
@@ -28,7 +44,49 @@ export default function Relatorios() {
 
   useEffect(() => {
     loadData();
+    loadPedidos();
   }, []);
+
+  const loadPedidos = async () => {
+    try {
+      const { data: pedidosData, error } = await supabase
+        .from('pedidos')
+        .select('*')
+        .not('destino', 'is', null)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      const pedidosComDestinos = await Promise.all(
+        (pedidosData || []).map(async (pedido) => {
+          const { data: destinosData } = await supabase
+            .from('pedidos_destinos')
+            .select('destino')
+            .eq('pedido_id', pedido.id)
+            .order('ordem', { ascending: true });
+
+          return {
+            id: pedido.id,
+            numero_crt: pedido.numero_crt,
+            numero_ov: pedido.numero_ov,
+            numero_fatura: pedido.numero_fatura,
+            tipo_papel: pedido.tipo_papel,
+            gramatura: pedido.gramatura,
+            formato_mm: pedido.formato_mm,
+            quantidade_bobinas: pedido.quantidade_bobinas,
+            peso_total_kg: pedido.peso_total_kg,
+            destinos: destinosData?.map(d => d.destino) || [],
+            created_at: pedido.created_at,
+            cancelado: pedido.cancelado,
+          };
+        })
+      );
+
+      setPedidos(pedidosComDestinos);
+    } catch (error) {
+      console.error('Erro ao carregar pedidos:', error);
+    }
+  };
 
   const loadData = async () => {
     setLoading(true);
@@ -168,6 +226,88 @@ export default function Relatorios() {
 
   return (
     <div className="space-y-6">
+      <div className="bg-white rounded-lg shadow">
+        <div className="px-6 py-4 border-b border-gray-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">Pedidos Realizados</h2>
+              <p className="text-sm text-gray-500 mt-1">
+                {pedidos.length} {pedidos.length === 1 ? 'pedido gerado' : 'pedidos gerados'}
+              </p>
+            </div>
+            <FileText className="w-8 h-8 text-blue-600" />
+          </div>
+        </div>
+
+        <div className="overflow-x-auto">
+          {pedidos.length === 0 ? (
+            <div className="text-center py-12">
+              <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+              <p className="text-gray-500 text-lg font-medium">Nenhum pedido realizado</p>
+              <p className="text-gray-400 text-sm mt-2">
+                Os pedidos gerados aparecerão aqui
+              </p>
+            </div>
+          ) : (
+            <table className="w-full">
+              <thead className="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">CRT</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">OV</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fatura</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo Papel</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gram.</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Formato</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bobinas</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Peso Total</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Destinos</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data</th>
+                  <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {pedidos.map((pedido) => (
+                  <tr key={pedido.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-4 py-3 text-sm font-medium text-gray-900">{pedido.numero_crt}</td>
+                    <td className="px-4 py-3 text-sm text-gray-700">{pedido.numero_ov || '-'}</td>
+                    <td className="px-4 py-3 text-sm text-gray-700">{pedido.numero_fatura || '-'}</td>
+                    <td className="px-4 py-3 text-sm text-red-600">{pedido.tipo_papel || '-'}</td>
+                    <td className="px-4 py-3 text-sm text-gray-700">{pedido.gramatura || '-'}</td>
+                    <td className="px-4 py-3 text-sm text-gray-700">{pedido.formato_mm || '-'}</td>
+                    <td className="px-4 py-3 text-sm font-semibold text-gray-900">{pedido.quantidade_bobinas}</td>
+                    <td className="px-4 py-3 text-sm font-semibold text-gray-900">{pedido.peso_total_kg.toFixed(2)} kg</td>
+                    <td className="px-4 py-3">
+                      <div className="flex flex-wrap gap-1">
+                        {pedido.destinos.map((destino, idx) => (
+                          <span
+                            key={idx}
+                            className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800"
+                          >
+                            {destino}
+                          </span>
+                        ))}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-gray-600">
+                      {new Date(pedido.created_at).toLocaleDateString('pt-BR')}
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        pedido.cancelado
+                          ? 'bg-red-100 text-red-800'
+                          : 'bg-green-100 text-green-800'
+                      }`}>
+                        {pedido.cancelado ? 'Cancelado' : 'Ativo'}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <button
           onClick={() => setFilterType('carga_completa')}

@@ -194,7 +194,7 @@ export default function Pedidos() {
     try {
       const { data: pedidos, error } = await supabase
         .from('pedidos')
-        .select('id, numero_crt, numero_oc, numero_ov, numero_fatura, quantidade_bobinas, peso_total_kg, status_pedido, created_at')
+        .select('*')
         .eq('cancelado', false)
         .not('destino', 'is', null)
         .order('created_at', { ascending: false });
@@ -420,88 +420,13 @@ Data de Emissão: ${new Date().toLocaleDateString('pt-BR')} ${new Date().toLocal
 
   return (
     <div className="space-y-6">
-      {pedidosAtivos.length > 0 && (
-        <div className="bg-white rounded-lg shadow">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900">Pedidos Ativos</h2>
-            <p className="text-sm text-gray-500 mt-1">Pedidos gerados que ainda não foram cancelados</p>
-          </div>
-
-          <div className="p-6">
-            <div className="space-y-4">
-              {pedidosAtivos.map((pedido) => (
-                <div
-                  key={pedido.id}
-                  className="border border-blue-300 bg-blue-50 hover:border-blue-400 rounded-lg p-4 transition-all"
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-3">
-                        <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-blue-100">
-                          <Package className="w-5 h-5 text-blue-600" />
-                        </div>
-                        <div>
-                          <p className="font-semibold text-gray-900 text-lg">CRT: {pedido.numero_crt}</p>
-                          <div className="mt-1 space-y-0.5">
-                            <p className="text-sm text-gray-600">
-                              OV: {pedido.numero_ov || 'N/A'} • OC: {pedido.numero_oc || 'N/A'}
-                            </p>
-                            <p className="text-sm text-gray-600">
-                              Fatura: {pedido.numero_fatura || 'N/A'}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-4 mt-4 p-4 bg-white rounded-lg border border-gray-200">
-                        <div>
-                          <p className="text-xs text-gray-500 uppercase font-medium mb-1">Quantidade</p>
-                          <p className="text-2xl font-bold text-blue-600">{pedido.quantidade_bobinas} bobinas</p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-gray-500 uppercase font-medium mb-1">Peso Total</p>
-                          <p className="text-2xl font-bold text-blue-600">{pedido.peso_total_kg.toFixed(2)} kg</p>
-                        </div>
-                      </div>
-
-                      {pedido.destinos && pedido.destinos.length > 0 && (
-                        <div className="mt-4 p-3 bg-white rounded-lg border border-gray-200">
-                          <p className="text-xs text-gray-500 uppercase font-medium mb-2">Destinos</p>
-                          <div className="flex flex-wrap gap-2">
-                            {pedido.destinos.map((destino, idx) => (
-                              <span
-                                key={idx}
-                                className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
-                              >
-                                {destino}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      <div className="mt-4 flex justify-end">
-                        <button
-                          onClick={() => openCancelModal(pedido.id, pedido.numero_crt)}
-                          className="flex items-center gap-2 px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-semibold shadow-md"
-                        >
-                          <XCircle className="w-5 h-5" />
-                          Cancelar Pedido
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
       <div className="bg-white rounded-lg shadow">
         <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">Cargas Disponíveis para Pedido</h2>
-          <p className="text-sm text-gray-500 mt-1">CRTs com todas as bobinas em estoque e marcadas como carga completa</p>
+          <h2 className="text-lg font-semibold text-gray-900">Gerenciamento de Pedidos</h2>
+          <p className="text-sm text-gray-500 mt-1">
+            {pedidosAtivos.length > 0 && `${pedidosAtivos.length} pedido(s) ativo(s) • `}
+            {crtsCargaCompleta.length} carga(s) disponível(is) para pedido
+          </p>
         </div>
 
         <div className="overflow-x-auto">
@@ -509,10 +434,10 @@ Data de Emissão: ${new Date().toLocaleDateString('pt-BR')} ${new Date().toLocal
             <div className="flex items-center justify-center py-12">
               <div className="text-gray-500">Carregando...</div>
             </div>
-          ) : crtsCargaCompleta.length === 0 ? (
+          ) : pedidosAtivos.length === 0 && crtsCargaCompleta.length === 0 ? (
             <div className="text-center py-12">
               <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-500 text-lg font-medium">Nenhuma carga completa disponível</p>
+              <p className="text-gray-500 text-lg font-medium">Nenhuma carga disponível</p>
               <p className="text-gray-400 text-sm mt-2">
                 Marque as cargas como completas no card "Estoque" para visualizá-las aqui
               </p>
@@ -531,10 +456,39 @@ Data de Emissão: ${new Date().toLocaleDateString('pt-BR')} ${new Date().toLocal
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Peso Total</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                   <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Carga Completa</th>
-                  <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Gerar Pedido</th>
+                  <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
+                {pedidosAtivos.map((pedido) => (
+                  <tr key={`pedido-${pedido.id}`} className="hover:bg-blue-50 bg-blue-25 transition-colors">
+                    <td className="px-4 py-3 text-sm font-medium text-gray-900">{pedido.numero_crt}</td>
+                    <td className="px-4 py-3 text-sm text-gray-700">{pedido.numero_ov || '-'}</td>
+                    <td className="px-4 py-3 text-sm text-gray-700">{pedido.numero_fatura || '-'}</td>
+                    <td className="px-4 py-3 text-sm text-red-600">{pedido.tipo_papel || '-'}</td>
+                    <td className="px-4 py-3 text-sm text-gray-700">{pedido.gramatura || '-'}</td>
+                    <td className="px-4 py-3 text-sm text-gray-700">{pedido.formato_mm || '-'}</td>
+                    <td className="px-4 py-3 text-sm font-semibold text-gray-900">{pedido.quantidade_bobinas}</td>
+                    <td className="px-4 py-3 text-sm font-semibold text-gray-900">{pedido.peso_total_kg.toFixed(2)} kg</td>
+                    <td className="px-4 py-3">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        Pedido Ativo
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <Check className="w-5 h-5 text-green-500 mx-auto" />
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <button
+                        onClick={() => openCancelModal(pedido.id, pedido.numero_crt)}
+                        className="inline-flex items-center gap-1 px-3 py-1.5 bg-red-600 text-white text-sm rounded-md hover:bg-red-700 transition-colors font-medium"
+                      >
+                        <XCircle className="w-4 h-4" />
+                        Cancelar
+                      </button>
+                    </td>
+                  </tr>
+                ))}
                 {crtsCargaCompleta.map((crt) => {
                   const firstBobina = crt.bobinas[0];
                   const allSameStatus = crt.bobinas.every(b => b.status === firstBobina.status);
@@ -543,7 +497,7 @@ Data de Emissão: ${new Date().toLocaleDateString('pt-BR')} ${new Date().toLocal
                     : 'Misto';
 
                   return (
-                    <tr key={crt.numero_crt} className="hover:bg-gray-50 transition-colors">
+                    <tr key={`carga-${crt.numero_crt}`} className="hover:bg-gray-50 transition-colors">
                       <td className="px-4 py-3 text-sm font-medium text-gray-900">{crt.numero_crt}</td>
                       <td className="px-4 py-3 text-sm text-gray-700">{firstBobina.numero_ov || '-'}</td>
                       <td className="px-4 py-3 text-sm text-gray-700">{firstBobina.numero_fatura || '-'}</td>
