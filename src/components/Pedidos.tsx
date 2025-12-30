@@ -500,11 +500,11 @@ Data de Emissão: ${new Date().toLocaleDateString('pt-BR')} ${new Date().toLocal
 
       <div className="bg-white rounded-lg shadow">
         <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">Cargas Completas - Prontas para Pedido</h2>
+          <h2 className="text-lg font-semibold text-gray-900">Cargas Disponíveis para Pedido</h2>
           <p className="text-sm text-gray-500 mt-1">CRTs com todas as bobinas em estoque e marcadas como carga completa</p>
         </div>
 
-        <div className="p-6">
+        <div className="overflow-x-auto">
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <div className="text-gray-500">Carregando...</div>
@@ -518,74 +518,72 @@ Data de Emissão: ${new Date().toLocaleDateString('pt-BR')} ${new Date().toLocal
               </p>
             </div>
           ) : (
-            <div className="space-y-4">
-              {crtsCargaCompleta.map((crt) => (
-                <div
-                  key={crt.numero_crt}
-                  className="border border-green-300 bg-green-50 hover:border-green-400 rounded-lg p-4 transition-all"
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-3">
-                        <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-green-100">
-                          <Package className="w-5 h-5 text-green-600" />
-                        </div>
-                        <div>
-                          <p className="font-semibold text-gray-900 text-lg">CRT: {crt.numero_crt}</p>
-                          {crt.bobinas[0] && (
-                            <div className="mt-1 space-y-0.5">
-                              <p className="text-sm text-gray-600">
-                                OV: {crt.bobinas[0].numero_ov || 'N/A'} • OC: {crt.bobinas[0].numero_oc || 'N/A'}
-                              </p>
-                              <p className="text-sm text-gray-600">
-                                Fatura: {crt.bobinas[0].numero_fatura || 'N/A'}
-                              </p>
-                              {crt.numero_fatura && (
-                                <p className="text-sm text-gray-600">
-                                  Fatura: {crt.numero_fatura}
-                                </p>
-                              )}
-                              <div className="flex gap-4 mt-1">
-                                <p className="text-sm text-gray-600">
-                                  Tipo: {crt.bobinas[0].tipo_papel || 'N/A'}
-                                </p>
-                                <p className="text-sm text-gray-600">
-                                  Gramatura: {crt.bobinas[0].gramatura || 'N/A'} g/m²
-                                </p>
-                                <p className="text-sm text-gray-600">
-                                  Formato: {crt.bobinas[0].formato_mm || 'N/A'} mm
-                                </p>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
+            <table className="w-full">
+              <thead className="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">CRT</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">OV</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fatura</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo Papel</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gram.</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Formato</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bobinas</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Peso Total</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                  <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Carga Completa</th>
+                  <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Gerar Pedido</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {crtsCargaCompleta.map((crt) => {
+                  const firstBobina = crt.bobinas[0];
+                  const allSameStatus = crt.bobinas.every(b => b.status === firstBobina.status);
+                  const statusText = allSameStatus
+                    ? (firstBobina.status === 'em_estoque' ? 'Em Estoque' : firstBobina.status === 'saida' ? 'Saída' : firstBobina.status)
+                    : 'Misto';
 
-                      <div className="grid grid-cols-2 gap-4 mt-4 p-4 bg-white rounded-lg border border-gray-200">
-                        <div>
-                          <p className="text-xs text-gray-500 uppercase font-medium mb-1">Quantidade</p>
-                          <p className="text-2xl font-bold text-green-600">{crt.total_bobinas} bobinas</p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-gray-500 uppercase font-medium mb-1">Peso Total</p>
-                          <p className="text-2xl font-bold text-green-600">{crt.peso_total.toFixed(2)} kg</p>
-                        </div>
-                      </div>
-
-                      <div className="mt-4 flex justify-end">
+                  return (
+                    <tr key={crt.numero_crt} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-4 py-3 text-sm font-medium text-gray-900">{crt.numero_crt}</td>
+                      <td className="px-4 py-3 text-sm text-gray-700">{firstBobina.numero_ov || '-'}</td>
+                      <td className="px-4 py-3 text-sm text-gray-700">{firstBobina.numero_fatura || '-'}</td>
+                      <td className="px-4 py-3 text-sm text-red-600">{firstBobina.tipo_papel || '-'}</td>
+                      <td className="px-4 py-3 text-sm text-gray-700">{firstBobina.gramatura || '-'}</td>
+                      <td className="px-4 py-3 text-sm text-gray-700">{firstBobina.formato_mm || '-'}</td>
+                      <td className="px-4 py-3 text-sm font-semibold text-gray-900">{crt.total_bobinas}</td>
+                      <td className="px-4 py-3 text-sm font-semibold text-gray-900">{crt.peso_total.toFixed(2)} kg</td>
+                      <td className="px-4 py-3">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          firstBobina.status === 'em_estoque'
+                            ? 'bg-blue-100 text-blue-800'
+                            : firstBobina.status === 'saida'
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-gray-100 text-gray-800'
+                        }`}>
+                          {statusText}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        {crt.bobinas.every(b => b.carga_completa) ? (
+                          <Check className="w-5 h-5 text-green-500 mx-auto" />
+                        ) : (
+                          <div className="w-5 h-5 border-2 border-gray-300 rounded-full mx-auto"></div>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-center">
                         <button
                           onClick={() => openPedidoModal(crt)}
-                          className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold shadow-md"
+                          className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors font-medium"
                         >
-                          <FileText className="w-5 h-5" />
-                          Gerar Pedido
+                          <FileText className="w-4 h-4" />
+                          Gerar
                         </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           )}
         </div>
       </div>
