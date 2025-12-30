@@ -41,6 +41,8 @@ export default function Relatorios() {
   const [filterType, setFilterType] = useState<FilterType>('todos');
   const [searchCrt, setSearchCrt] = useState('');
   const [searchOv, setSearchOv] = useState('');
+  const [searchPedidoCrt, setSearchPedidoCrt] = useState('');
+  const [searchPedidoOv, setSearchPedidoOv] = useState('');
 
   useEffect(() => {
     loadData();
@@ -224,28 +226,80 @@ export default function Relatorios() {
     return status === 'carregado' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800';
   };
 
+  const getFilteredPedidos = () => {
+    let filtered = pedidos;
+
+    if (searchPedidoCrt.trim()) {
+      filtered = filtered.filter(pedido =>
+        pedido.numero_crt.toLowerCase().includes(searchPedidoCrt.toLowerCase())
+      );
+    }
+
+    if (searchPedidoOv.trim()) {
+      filtered = filtered.filter(pedido =>
+        pedido.numero_ov.toLowerCase().includes(searchPedidoOv.toLowerCase())
+      );
+    }
+
+    return filtered;
+  };
+
+  const filteredPedidos = getFilteredPedidos();
+
   return (
     <div className="space-y-6">
       <div className="bg-white rounded-lg shadow">
         <div className="px-6 py-4 border-b border-gray-200">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between mb-4">
             <div>
               <h2 className="text-lg font-semibold text-gray-900">Pedidos Realizados</h2>
               <p className="text-sm text-gray-500 mt-1">
-                {pedidos.length} {pedidos.length === 1 ? 'pedido gerado' : 'pedidos gerados'}
+                {filteredPedidos.length} de {pedidos.length} {pedidos.length === 1 ? 'pedido' : 'pedidos'}
               </p>
             </div>
             <FileText className="w-8 h-8 text-blue-600" />
           </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Filtrar por CRT..."
+                value={searchPedidoCrt}
+                onChange={(e) => setSearchPedidoCrt(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Filtrar por OV..."
+                value={searchPedidoOv}
+                onChange={(e) => setSearchPedidoOv(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          </div>
         </div>
 
         <div className="overflow-x-auto">
-          {pedidos.length === 0 ? (
+          {filteredPedidos.length === 0 && pedidos.length === 0 ? (
             <div className="text-center py-12">
               <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
               <p className="text-gray-500 text-lg font-medium">Nenhum pedido realizado</p>
               <p className="text-gray-400 text-sm mt-2">
                 Os pedidos gerados aparecerão aqui
+              </p>
+            </div>
+          ) : filteredPedidos.length === 0 ? (
+            <div className="text-center py-12">
+              <Search className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+              <p className="text-gray-500 text-lg font-medium">Nenhum pedido encontrado</p>
+              <p className="text-gray-400 text-sm mt-2">
+                Tente ajustar os filtros de busca
               </p>
             </div>
           ) : (
@@ -266,7 +320,7 @@ export default function Relatorios() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {pedidos.map((pedido) => (
+                {filteredPedidos.map((pedido) => (
                   <tr key={pedido.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-4 py-3 text-sm font-medium text-gray-900">{pedido.numero_crt}</td>
                     <td className="px-4 py-3 text-sm text-gray-700">{pedido.numero_ov || '-'}</td>
