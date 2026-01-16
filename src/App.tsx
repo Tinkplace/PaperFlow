@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Package, FileText, Truck, BarChart3, MapPin, CheckSquare, LogOut, ClipboardList, Archive, Globe, TrendingUp } from 'lucide-react';
+import { Package, FileText, Truck, BarChart3, MapPin, CheckSquare, LogOut, ClipboardList, Archive, Globe, TrendingUp, DollarSign } from 'lucide-react';
 import Entrada from './components/Entrada';
 import Estoque from './components/Estoque';
 import Saida from './components/Saida';
@@ -11,8 +11,9 @@ import ControleDips from './components/ControleDips';
 import Romaneio from './components/Romaneio';
 import Relatorios from './components/Relatorios';
 import PreCadastro from './components/PreCadastro';
+import Faturamento from './components/Faturamento';
 
-type Tab = 'entrada' | 'estoque' | 'saida' | 'cross-border' | 'pedidos' | 'acompanhamento' | 'indicador-otif' | 'controle-dips' | 'romaneio' | 'relatorios' | 'pre-cadastro';
+type Tab = 'entrada' | 'estoque' | 'saida' | 'cross-border' | 'pedidos' | 'acompanhamento' | 'indicador-otif' | 'controle-dips' | 'romaneio' | 'relatorios' | 'pre-cadastro' | 'faturamento';
 
 function App() {
   const [activeTab, setActiveTab] = useState<Tab>('entrada');
@@ -147,6 +148,17 @@ function App() {
             <BarChart3 className="w-5 h-5" />
             <span>Relatórios</span>
           </button>
+          <button
+            onClick={() => setActiveTab('faturamento')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
+              activeTab === 'faturamento'
+                ? 'bg-white bg-opacity-10 text-white border border-white border-opacity-20'
+                : 'text-gray-300 hover:bg-white hover:bg-opacity-5 border border-transparent'
+            }`}
+          >
+            <DollarSign className="w-5 h-5" />
+            <span>Faturamento</span>
+          </button>
         </nav>
       </aside>
 
@@ -165,6 +177,7 @@ function App() {
               {activeTab === 'controle-dips' && 'Controle de DIPs'}
               {activeTab === 'romaneio' && 'Romaneios'}
               {activeTab === 'relatorios' && 'Relatórios e Análise'}
+              {activeTab === 'faturamento' && 'Faturamento'}
             </h2>
           </div>
         </header>
@@ -181,6 +194,7 @@ function App() {
           {activeTab === 'controle-dips' && <ControleDips />}
           {activeTab === 'romaneio' && <Romaneio />}
           {activeTab === 'relatorios' && <Relatorios />}
+          {activeTab === 'faturamento' && <Faturamento />}
         </main>
       </div>
     </div>
