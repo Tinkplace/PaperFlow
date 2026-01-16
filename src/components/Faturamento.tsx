@@ -30,6 +30,7 @@ export default function Faturamento() {
   const [loading, setLoading] = useState(true);
   const [editingRow, setEditingRow] = useState<string | null>(null);
   const [filterPlaca, setFilterPlaca] = useState('');
+  const [filterCrt, setFilterCrt] = useState('');
   const [newRow, setNewRow] = useState({
     origem: '',
     destino: '',
@@ -152,10 +153,21 @@ export default function Faturamento() {
   };
 
   const getFilteredVeiculos = () => {
-    if (!filterPlaca.trim()) return freteVeiculos;
-    return freteVeiculos.filter(v =>
-      v.placa_carreta.toLowerCase().includes(filterPlaca.toLowerCase())
-    );
+    let filtered = freteVeiculos;
+
+    if (filterPlaca.trim()) {
+      filtered = filtered.filter(v =>
+        v.placa_carreta.toLowerCase().includes(filterPlaca.toLowerCase())
+      );
+    }
+
+    if (filterCrt.trim()) {
+      filtered = filtered.filter(v =>
+        v.numero_crt.toLowerCase().includes(filterCrt.toLowerCase())
+      );
+    }
+
+    return filtered;
   };
 
   const calcularTotais = () => {
@@ -346,7 +358,7 @@ export default function Faturamento() {
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold text-gray-900">Frete Complementar</h3>
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-3">
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                     <input
@@ -354,6 +366,16 @@ export default function Faturamento() {
                       placeholder="Filtrar por placa..."
                       value={filterPlaca}
                       onChange={(e) => setFilterPlaca(e.target.value)}
+                      className="pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <input
+                      type="text"
+                      placeholder="Filtrar por CRT..."
+                      value={filterCrt}
+                      onChange={(e) => setFilterCrt(e.target.value)}
                       className="pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
