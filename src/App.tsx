@@ -138,17 +138,6 @@ function App() {
             <span>Indicador OTIF</span>
           </button>
           <button
-            onClick={() => setActiveTab('relatorios')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
-              activeTab === 'relatorios'
-                ? 'bg-white bg-opacity-10 text-white border border-white border-opacity-20'
-                : 'text-gray-300 hover:bg-white hover:bg-opacity-5 border border-transparent'
-            }`}
-          >
-            <BarChart3 className="w-5 h-5" />
-            <span>Relatórios</span>
-          </button>
-          <button
             onClick={() => setActiveTab('faturamento')}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
               activeTab === 'faturamento'
@@ -158,6 +147,17 @@ function App() {
           >
             <DollarSign className="w-5 h-5" />
             <span>Faturamento</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('relatorios')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
+              activeTab === 'relatorios'
+                ? 'bg-white bg-opacity-10 text-white border border-white border-opacity-20'
+                : 'text-gray-300 hover:bg-white hover:bg-opacity-5 border border-transparent'
+            }`}
+          >
+            <BarChart3 className="w-5 h-5" />
+            <span>Relatórios</span>
           </button>
         </nav>
       </aside>
