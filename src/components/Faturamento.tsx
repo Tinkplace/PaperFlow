@@ -18,6 +18,8 @@ interface FreteVeiculo {
   destino: string;
   peso_kg: number;
   valor_frete_usd: number;
+  crt_complementar: string | null;
+  data_entrega_remito: string | null;
 }
 
 export default function Faturamento() {
@@ -168,6 +170,25 @@ export default function Faturamento() {
     }
 
     return filtered;
+  };
+
+  const handleUpdateVeiculo = async (id: string, field: string, value: string) => {
+    try {
+      const updateData: any = { [field]: value || null };
+
+      const { error } = await supabase
+        .from('frete_veiculos')
+        .update(updateData)
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setFreteVeiculos(freteVeiculos.map(v =>
+        v.id === id ? { ...v, ...updateData } : v
+      ));
+    } catch (error) {
+      console.error('Erro ao atualizar veículo:', error);
+    }
   };
 
   const calcularTotais = () => {
@@ -475,12 +496,18 @@ export default function Faturamento() {
                       <th className="border border-gray-300 px-4 py-2 text-right text-xs font-medium text-gray-700 uppercase">
                         Valor Frete (US$)
                       </th>
+                      <th className="border border-gray-300 px-4 py-2 text-left text-xs font-medium text-gray-700 uppercase">
+                        CRT Complementar
+                      </th>
+                      <th className="border border-gray-300 px-4 py-2 text-left text-xs font-medium text-gray-700 uppercase">
+                        Data Entrega Remito
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
                     {filteredVeiculos.length === 0 ? (
                       <tr>
-                        <td colSpan={6} className="border border-gray-300 px-4 py-8 text-center text-gray-500">
+                        <td colSpan={8} className="border border-gray-300 px-4 py-8 text-center text-gray-500">
                           {freteVeiculos.length === 0
                             ? 'Nenhuma viagem registrada'
                             : 'Nenhum veículo encontrado com este filtro'
@@ -507,6 +534,23 @@ export default function Faturamento() {
                           </td>
                           <td className="border border-gray-300 px-4 py-2 text-right text-gray-900 font-bold">
                             {veiculo.valor_frete_usd.toFixed(2)}
+                          </td>
+                          <td className="border border-gray-300 px-2 py-1">
+                            <input
+                              type="text"
+                              value={veiculo.crt_complementar || ''}
+                              onChange={(e) => handleUpdateVeiculo(veiculo.id, 'crt_complementar', e.target.value)}
+                              placeholder="Digite o CRT..."
+                              className="w-full px-2 py-1 border-0 focus:ring-1 focus:ring-blue-500 rounded"
+                            />
+                          </td>
+                          <td className="border border-gray-300 px-2 py-1">
+                            <input
+                              type="date"
+                              value={veiculo.data_entrega_remito || ''}
+                              onChange={(e) => handleUpdateVeiculo(veiculo.id, 'data_entrega_remito', e.target.value)}
+                              className="w-full px-2 py-1 border-0 focus:ring-1 focus:ring-blue-500 rounded"
+                            />
                           </td>
                         </tr>
                       ))
