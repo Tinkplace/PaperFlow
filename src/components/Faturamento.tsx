@@ -172,9 +172,39 @@ export default function Faturamento() {
     return filtered;
   };
 
+  const calcularFreteVeiculo = async (origem: string, destino: string, peso_kg: number) => {
+    const rota = tabelaFrete.find(
+      r => r.origem.toLowerCase() === origem.toLowerCase() &&
+           r.destino.toLowerCase() === destino.toLowerCase()
+    );
+
+    if (rota) {
+      return peso_kg * rota.valor_frete_kg_usd;
+    }
+    return 0;
+  };
+
   const handleUpdateVeiculo = async (id: string, field: string, value: string) => {
     try {
-      const updateData: any = { [field]: value || null };
+      const veiculo = freteVeiculos.find(v => v.id === id);
+      if (!veiculo) return;
+
+      let updateData: any = { [field]: field === 'peso_kg' ? Number(value) || 0 : value || null };
+
+      const novaOrigemDestinoPeso = {
+        origem: field === 'origem' ? value : veiculo.origem,
+        destino: field === 'destino' ? value : veiculo.destino,
+        peso_kg: field === 'peso_kg' ? (Number(value) || 0) : veiculo.peso_kg
+      };
+
+      if (field === 'origem' || field === 'destino' || field === 'peso_kg') {
+        const novoFrete = await calcularFreteVeiculo(
+          novaOrigemDestinoPeso.origem,
+          novaOrigemDestinoPeso.destino,
+          novaOrigemDestinoPeso.peso_kg
+        );
+        updateData.valor_frete_usd = novoFrete;
+      }
 
       const { error } = await supabase
         .from('frete_veiculos')
@@ -517,22 +547,48 @@ export default function Faturamento() {
                     ) : (
                       filteredVeiculos.map((veiculo) => (
                         <tr key={veiculo.id} className="hover:bg-gray-50">
-                          <td className="border border-gray-300 px-4 py-2 font-medium text-gray-900">
-                            {veiculo.placa_carreta}
+                          <td className="border border-gray-300 px-2 py-1">
+                            <input
+                              type="text"
+                              value={veiculo.placa_carreta}
+                              onChange={(e) => handleUpdateVeiculo(veiculo.id, 'placa_carreta', e.target.value)}
+                              className="w-full px-2 py-1 border-0 focus:ring-1 focus:ring-blue-500 rounded font-medium text-gray-900"
+                            />
                           </td>
-                          <td className="border border-gray-300 px-4 py-2 text-gray-700">
-                            {veiculo.numero_crt}
+                          <td className="border border-gray-300 px-2 py-1">
+                            <input
+                              type="text"
+                              value={veiculo.numero_crt}
+                              onChange={(e) => handleUpdateVeiculo(veiculo.id, 'numero_crt', e.target.value)}
+                              className="w-full px-2 py-1 border-0 focus:ring-1 focus:ring-blue-500 rounded text-gray-700"
+                            />
                           </td>
-                          <td className="border border-gray-300 px-4 py-2 text-gray-700">
-                            {veiculo.origem}
+                          <td className="border border-gray-300 px-2 py-1">
+                            <input
+                              type="text"
+                              value={veiculo.origem}
+                              onChange={(e) => handleUpdateVeiculo(veiculo.id, 'origem', e.target.value)}
+                              className="w-full px-2 py-1 border-0 focus:ring-1 focus:ring-blue-500 rounded text-gray-700"
+                            />
                           </td>
-                          <td className="border border-gray-300 px-4 py-2 text-red-600 font-medium">
-                            {veiculo.destino}
+                          <td className="border border-gray-300 px-2 py-1">
+                            <input
+                              type="text"
+                              value={veiculo.destino}
+                              onChange={(e) => handleUpdateVeiculo(veiculo.id, 'destino', e.target.value)}
+                              className="w-full px-2 py-1 border-0 focus:ring-1 focus:ring-blue-500 rounded text-red-600 font-medium"
+                            />
                           </td>
-                          <td className="border border-gray-300 px-4 py-2 text-right text-gray-900 font-medium">
-                            {veiculo.peso_kg.toFixed(2)}
+                          <td className="border border-gray-300 px-2 py-1">
+                            <input
+                              type="number"
+                              step="0.01"
+                              value={veiculo.peso_kg}
+                              onChange={(e) => handleUpdateVeiculo(veiculo.id, 'peso_kg', e.target.value)}
+                              className="w-full px-2 py-1 border-0 focus:ring-1 focus:ring-blue-500 rounded text-right text-gray-900 font-medium"
+                            />
                           </td>
-                          <td className="border border-gray-300 px-4 py-2 text-right text-gray-900 font-bold">
+                          <td className="border border-gray-300 px-4 py-2 text-right text-gray-900 font-bold bg-gray-50">
                             {veiculo.valor_frete_usd.toFixed(2)}
                           </td>
                           <td className="border border-gray-300 px-2 py-1">
@@ -559,9 +615,14 @@ export default function Faturamento() {
                 </table>
               </div>
 
-              <p className="text-xs text-gray-500">
-                Fórmula: Valor Complementar = Somatória Frete Veículos - Frete CRT Padrão
-              </p>
+              <div className="space-y-1">
+                <p className="text-xs text-gray-500">
+                  Fórmula: Valor Complementar = Somatória Frete Veículos - Frete CRT Padrão
+                </p>
+                <p className="text-xs text-blue-600 font-medium">
+                  Ao editar Origem, Destino ou Peso, o Valor Frete será recalculado automaticamente com base na Tabela de Frete.
+                </p>
+              </div>
             </div>
           )}
         </div>
