@@ -172,6 +172,16 @@ export default function Faturamento() {
     return filtered;
   };
 
+  const getOrigensUnicas = () => {
+    const origens = tabelaFrete.map(r => r.origem);
+    return [...new Set(origens)].sort();
+  };
+
+  const getDestinosUnicos = () => {
+    const destinos = tabelaFrete.map(r => r.destino);
+    return [...new Set(destinos)].sort();
+  };
+
   const calcularFreteVeiculo = async (origem: string, destino: string, peso_kg: number) => {
     const rota = tabelaFrete.find(
       r => r.origem.toLowerCase() === origem.toLowerCase() &&
@@ -564,20 +574,32 @@ export default function Faturamento() {
                             />
                           </td>
                           <td className="border border-gray-300 px-2 py-1">
-                            <input
-                              type="text"
+                            <select
                               value={veiculo.origem}
                               onChange={(e) => handleUpdateVeiculo(veiculo.id, 'origem', e.target.value)}
-                              className="w-full px-2 py-1 border-0 focus:ring-1 focus:ring-blue-500 rounded text-gray-700"
-                            />
+                              className="w-full px-2 py-1 border-0 focus:ring-1 focus:ring-blue-500 rounded text-gray-700 bg-white cursor-pointer"
+                            >
+                              <option value="">Selecione...</option>
+                              {getOrigensUnicas().map((origem) => (
+                                <option key={origem} value={origem}>
+                                  {origem}
+                                </option>
+                              ))}
+                            </select>
                           </td>
                           <td className="border border-gray-300 px-2 py-1">
-                            <input
-                              type="text"
+                            <select
                               value={veiculo.destino}
                               onChange={(e) => handleUpdateVeiculo(veiculo.id, 'destino', e.target.value)}
-                              className="w-full px-2 py-1 border-0 focus:ring-1 focus:ring-blue-500 rounded text-red-600 font-medium"
-                            />
+                              className="w-full px-2 py-1 border-0 focus:ring-1 focus:ring-blue-500 rounded text-red-600 font-medium bg-white cursor-pointer"
+                            >
+                              <option value="">Selecione...</option>
+                              {getDestinosUnicos().map((destino) => (
+                                <option key={destino} value={destino}>
+                                  {destino}
+                                </option>
+                              ))}
+                            </select>
                           </td>
                           <td className="border border-gray-300 px-2 py-1">
                             <input
