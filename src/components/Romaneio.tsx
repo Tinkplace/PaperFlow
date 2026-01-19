@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase, Bobina } from '../lib/supabase';
-import { FileDown, Truck, Package } from 'lucide-react';
+import { FileDown, Truck, Package, FileText, X } from 'lucide-react';
 
 interface Destino {
   destino: string;
@@ -29,6 +29,22 @@ interface PedidoPendente {
   created_at: string;
 }
 
+interface RemitoData {
+  remitente: string;
+  destinatario: string;
+  patente_camion: string;
+  patente_semi: string;
+  chofer: string;
+  documento: string;
+  documentos_carga: string;
+  descripcion: string;
+  cantidad: string;
+  total_peso_bruto: string;
+  total_peso_neto: string;
+  total_bultos: string;
+  fecha: string;
+}
+
 export default function Romaneio() {
   const [crts, setCrts] = useState<string[]>([]);
   const [selectedCrt, setSelectedCrt] = useState<string>('');
@@ -42,6 +58,22 @@ export default function Romaneio() {
   const [selectedBobinas, setSelectedBobinas] = useState<Set<string>>(new Set());
   const [pedidosPendentes, setPedidosPendentes] = useState<PedidoPendente[]>([]);
   const [loading, setLoading] = useState(false);
+  const [showRemitoModal, setShowRemitoModal] = useState(false);
+  const [remitoData, setRemitoData] = useState<RemitoData>({
+    remitente: 'Klabin S.A\nAV. Brigadeiro Faria Lima 3600\nItaim Bibi, São Paulo\nCNPJ 89.637.490/0001-45',
+    destinatario: '',
+    patente_camion: '',
+    patente_semi: '',
+    chofer: '',
+    documento: '',
+    documentos_carga: '',
+    descripcion: '',
+    cantidad: '',
+    total_peso_bruto: '',
+    total_peso_neto: '',
+    total_bultos: '',
+    fecha: new Date().toISOString().split('T')[0],
+  });
 
   const [formData, setFormData] = useState({
     data_carregamento: '',
@@ -360,6 +392,288 @@ export default function Romaneio() {
     }
   };
 
+  const openRemitoModal = async (romaneioId: string) => {
+    try {
+      // Buscar dados do romaneio
+      const { data: romaneio, error: romaneioError } = await supabase
+        .from('romaneios')
+        .select('*')
+        .eq('id', romaneioId)
+        .single();
+
+      if (romaneioError) throw romaneioError;
+
+      // Buscar bobinas do romaneio
+      const { data: romaneiosBobinas, error: rbError } = await supabase
+        .from('romaneios_bobinas')
+        .select('bobina_id')
+        .eq('romaneio_id', romaneioId);
+
+      if (rbError) throw rbError;
+
+      const bobinaIds = romaneiosBobinas?.map(rb => rb.bobina_id) || [];
+
+      const { data: bobinasData, error: bobinasError } = await supabase
+        .from('bobinas')
+        .select('*')
+        .in('id', bobinaIds);
+
+      if (bobinasError) throw bobinasError;
+
+      // Buscar dados do pedido para obter o OC
+      let numeroOc = '';
+      if (romaneio.numero_crt) {
+        const { data: pedidoData } = await supabase
+          .from('pedidos')
+          .select('numero_oc')
+          .eq('numero_crt', romaneio.numero_crt)
+          .eq('cancelado', false)
+          .maybeSingle();
+
+        numeroOc = pedidoData?.numero_oc || '';
+      }
+
+      // Calcular totais
+      const totalPesoBruto = bobinasData?.reduce((sum, b) => sum + Number(b.peso_kg), 0) || 0;
+      const totalBultos = bobinasData?.length || 0;
+
+      // Extrair tipos de papel únicos
+      const tiposPapel = [...new Set(bobinasData?.map(b => b.tipo_papel) || [])];
+      const descripcion = `${totalPesoBruto.toFixed(2)} kg de ${tiposPapel.join(', ')}`;
+
+      // Documentos de la carga
+      const documentosCarga = `CRT: ${romaneio.numero_crt || 'N/A'}\nOC: ${numeroOc || 'N/A'}`;
+
+      setRemitoData({
+        remitente: 'Klabin S.A\nAV. Brigadeiro Faria Lima 3600\nItaim Bibi, São Paulo\nCNPJ 89.637.490/0001-45',
+        destinatario: romaneio.destino || '',
+        patente_camion: romaneio.placa_carreta || '',
+        patente_semi: '',
+        chofer: romaneio.nome_motorista || '',
+        documento: '',
+        documentos_carga: documentosCarga,
+        descripcion: descripcion,
+        cantidad: totalPesoBruto.toFixed(2),
+        total_peso_bruto: totalPesoBruto.toFixed(2),
+        total_peso_neto: totalPesoBruto.toFixed(2),
+        total_bultos: totalBultos.toString(),
+        fecha: new Date(romaneio.data_carregamento).toISOString().split('T')[0],
+      });
+
+      setShowRemitoModal(true);
+    } catch (error) {
+      console.error('Erro ao carregar dados do remito:', error);
+      alert('Erro ao carregar dados do remito');
+    }
+  };
+
+  const printRemito = () => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="UTF-8">
+          <title>REMITO</title>
+          <style>
+            body {
+              font-family: Arial, sans-serif;
+              padding: 20px;
+              color: #000;
+            }
+            .container {
+              max-width: 800px;
+              margin: 0 auto;
+              border: 2px solid #000;
+              padding: 20px;
+            }
+            .header {
+              text-align: center;
+              border-bottom: 2px solid #000;
+              padding-bottom: 10px;
+              margin-bottom: 20px;
+            }
+            .header h1 {
+              margin: 0;
+              font-size: 24px;
+            }
+            .section {
+              border: 1px solid #000;
+              padding: 10px;
+              margin-bottom: 10px;
+            }
+            .section-title {
+              font-weight: bold;
+              font-size: 14px;
+              margin-bottom: 8px;
+              border-bottom: 1px solid #000;
+              padding-bottom: 4px;
+            }
+            .field {
+              margin: 5px 0;
+              font-size: 12px;
+            }
+            .field-label {
+              font-weight: bold;
+              display: inline-block;
+              width: 150px;
+            }
+            .grid {
+              display: grid;
+              grid-template-columns: 1fr 1fr;
+              gap: 10px;
+            }
+            .field-value {
+              white-space: pre-line;
+            }
+            table {
+              width: 100%;
+              border-collapse: collapse;
+              margin-top: 10px;
+            }
+            th, td {
+              border: 1px solid #000;
+              padding: 8px;
+              text-align: left;
+              font-size: 12px;
+            }
+            th {
+              background: #f0f0f0;
+              font-weight: bold;
+            }
+            @media print {
+              body { padding: 0; }
+              button { display: none; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>REMITO</h1>
+              <p style="margin: 5px 0;">DOCUMENTO NO VÁLIDO COMO FACTURA</p>
+              <p style="margin: 5px 0;">FECHA: ${remitoData.fecha}</p>
+            </div>
+
+            <div class="grid">
+              <div class="section">
+                <div class="section-title">REMITENTE</div>
+                <div class="field-value">${remitoData.remitente}</div>
+              </div>
+
+              <div class="section">
+                <div class="section-title">DESTINATARIO</div>
+                <div class="field-value">${remitoData.destinatario}</div>
+              </div>
+            </div>
+
+            <div class="grid">
+              <div class="section">
+                <div class="field">
+                  <span class="field-label">Patente camión:</span>
+                  <span>${remitoData.patente_camion}</span>
+                </div>
+                <div class="field">
+                  <span class="field-label">Patente semi:</span>
+                  <span>${remitoData.patente_semi}</span>
+                </div>
+                <div class="field">
+                  <span class="field-label">Chofer:</span>
+                  <span>${remitoData.chofer}</span>
+                </div>
+                <div class="field">
+                  <span class="field-label">Documento:</span>
+                  <span>${remitoData.documento}</span>
+                </div>
+              </div>
+
+              <div class="section">
+                <div class="section-title">DOCUMENTOS DE LA CARGA</div>
+                <div>Carta de Porte:</div>
+                <div class="field-value">${remitoData.documentos_carga}</div>
+              </div>
+            </div>
+
+            <table>
+              <thead>
+                <tr>
+                  <th>DESCRIPCIÓN</th>
+                  <th>CANTIDAD</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>${remitoData.descripcion}</td>
+                  <td>${remitoData.cantidad} kg</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div style="margin-top: 20px; text-align: right;">
+              <div class="field">
+                <span class="field-label">TOTAL PESO BRUTO:</span>
+                <span>${remitoData.total_peso_bruto} kg</span>
+              </div>
+              <div class="field">
+                <span class="field-label">TOTAL PESO NETO:</span>
+                <span>${remitoData.total_peso_neto} kg</span>
+              </div>
+              <div class="field">
+                <span class="field-label">TOTAL BULTOS:</span>
+                <span>${remitoData.total_bultos}</span>
+              </div>
+            </div>
+
+            <div class="section" style="margin-top: 30px;">
+              <p style="font-size: 10px; margin: 0;">
+                LA MERCADERÍA VIAJA POR CUENTA Y ORDEN DEL REMITENTE / DESTINATARIO.
+                SIENDO EL SEGURO RESPONSABILIDAD DE LOS MISMOS, EXIMIENDO AL
+                TRANSPORTISTA POR DAÑOS QUE PUDIERAN PRODUCIRSE DURANTE LA CARGA,
+                TRANSPORTE Y DESCARGA DE LA MERCADERÍA.
+              </p>
+            </div>
+
+            <div style="margin-top: 40px;">
+              <div class="grid">
+                <div>
+                  <p style="font-weight: bold; margin-bottom: 60px;">RECIBÍ CONFORME</p>
+                  <div style="border-top: 1px solid #000; width: 200px;">
+                    <p style="margin: 5px 0; font-size: 10px;">Fecha:</p>
+                    <p style="margin: 5px 0; font-size: 10px;">Firma:</p>
+                    <p style="margin: 5px 0; font-size: 10px;">Aclaración:</p>
+                    <p style="margin: 5px 0; font-size: 10px;">Documento:</p>
+                  </div>
+                </div>
+                <div>
+                  <p style="font-weight: bold; margin-bottom: 5px;">OBSERVACIONES</p>
+                  <div style="border: 1px solid #000; height: 120px; padding: 5px;"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <button onclick="window.print()" style="
+            margin-top: 20px;
+            padding: 12px 24px;
+            background: #333;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+          ">
+            Imprimir / Salvar PDF
+          </button>
+        </body>
+      </html>
+    `;
+
+    printWindow.document.write(html);
+    printWindow.document.close();
+  };
+
   const generatePDF = (romaneio: any, bobinasCarregadas: Bobina[], caminhaoNumero: number) => {
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
@@ -660,6 +974,9 @@ export default function Romaneio() {
                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                             Bobinas
                           </th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                            Ações
+                          </th>
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
@@ -679,6 +996,15 @@ export default function Romaneio() {
                             </td>
                             <td className="px-4 py-3 text-sm text-gray-600">
                               {rom.bobinas_count}
+                            </td>
+                            <td className="px-4 py-3">
+                              <button
+                                onClick={() => openRemitoModal(rom.id)}
+                                className="flex items-center gap-1 px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                              >
+                                <FileText className="w-4 h-4" />
+                                Gerar Remito
+                              </button>
                             </td>
                           </tr>
                         ))}
@@ -913,6 +1239,206 @@ export default function Romaneio() {
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showRemitoModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between sticky top-0 bg-white z-10">
+              <h2 className="text-lg font-semibold text-gray-900">Gerar Remito</h2>
+              <button
+                onClick={() => setShowRemitoModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    REMITENTE
+                  </label>
+                  <textarea
+                    value={remitoData.remitente}
+                    onChange={(e) => setRemitoData({ ...remitoData, remitente: e.target.value })}
+                    rows={4}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    DESTINATARIO
+                  </label>
+                  <textarea
+                    value={remitoData.destinatario}
+                    onChange={(e) => setRemitoData({ ...remitoData, destinatario: e.target.value })}
+                    rows={4}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Patente camión
+                  </label>
+                  <input
+                    type="text"
+                    value={remitoData.patente_camion}
+                    onChange={(e) => setRemitoData({ ...remitoData, patente_camion: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Patente semi
+                  </label>
+                  <input
+                    type="text"
+                    value={remitoData.patente_semi}
+                    onChange={(e) => setRemitoData({ ...remitoData, patente_semi: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Chofer
+                  </label>
+                  <input
+                    type="text"
+                    value={remitoData.chofer}
+                    onChange={(e) => setRemitoData({ ...remitoData, chofer: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Documento
+                  </label>
+                  <input
+                    type="text"
+                    value={remitoData.documento}
+                    onChange={(e) => setRemitoData({ ...remitoData, documento: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  DOCUMENTOS DE LA CARGA (Carta de Porte)
+                </label>
+                <textarea
+                  value={remitoData.documentos_carga}
+                  onChange={(e) => setRemitoData({ ...remitoData, documentos_carga: e.target.value })}
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    DESCRIPCIÓN
+                  </label>
+                  <input
+                    type="text"
+                    value={remitoData.descripcion}
+                    onChange={(e) => setRemitoData({ ...remitoData, descripcion: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    CANTIDAD (kg)
+                  </label>
+                  <input
+                    type="text"
+                    value={remitoData.cantidad}
+                    onChange={(e) => setRemitoData({ ...remitoData, cantidad: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    TOTAL PESO BRUTO (kg)
+                  </label>
+                  <input
+                    type="text"
+                    value={remitoData.total_peso_bruto}
+                    onChange={(e) => setRemitoData({ ...remitoData, total_peso_bruto: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    TOTAL PESO NETO (kg)
+                  </label>
+                  <input
+                    type="text"
+                    value={remitoData.total_peso_neto}
+                    onChange={(e) => setRemitoData({ ...remitoData, total_peso_neto: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    TOTAL BULTOS
+                  </label>
+                  <input
+                    type="text"
+                    value={remitoData.total_bultos}
+                    onChange={(e) => setRemitoData({ ...remitoData, total_bultos: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  FECHA
+                </label>
+                <input
+                  type="date"
+                  value={remitoData.fecha}
+                  onChange={(e) => setRemitoData({ ...remitoData, fecha: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+
+            <div className="px-6 py-4 border-t border-gray-200 flex gap-3 justify-end">
+              <button
+                onClick={() => setShowRemitoModal(false)}
+                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={printRemito}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <FileDown className="w-4 h-4" />
+                Imprimir Remito
+              </button>
             </div>
           </div>
         </div>
